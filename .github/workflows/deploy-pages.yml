@@ -46,6 +46,11 @@ jobs:
 
       - name: Pages için hazırla
         uses: actions/configure-pages@v5
+        with:
+          # Pages bu repoda hiç açılmamışsa otomatik olarak etkinleştirmeyi dener;
+          # başarısız olursa kullanıcı Settings > Pages > Source'tan bir kerelik
+          # "GitHub Actions" seçmesi gerekir.
+          enablement: true
 
       - name: Derleme çıktısını yükle
         uses: actions/upload-pages-artifact@v3
