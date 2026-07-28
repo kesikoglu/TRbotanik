@@ -1,0 +1,64 @@
+name: GitHub Pages'e yayınla
+
+# Bu dala her push'ta yeniden derlenip yayınlanır. Kullanıcının kendi bilgisayarında
+# hiçbir kurulum yapmasına gerek kalmadan, gerçek bir internet adresinden (ve gerçek
+# internet erişimiyle — Claude Artifact önizlemesinin aksine) uygulamayı test
+# edebilmesi için eklendi.
+on:
+  push:
+    branches:
+      - claude/turkiye-botanik-haritasi-di1550
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Depoyu al
+        uses: actions/checkout@v4
+
+      - name: Node.js kur
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Bağımlılıkları kur
+        run: npm ci
+
+      - name: Veri setini üret
+        run: npm run data:all
+
+      - name: Uygulamayı derle
+        run: npm run build -w @trbotanik/web
+        env:
+          # Depo adı "TRbotanik" — proje sitesi bu alt yolda yayınlanır.
+          GH_PAGES_BASE: /TRbotanik/
+
+      - name: Pages için hazırla
+        uses: actions/configure-pages@v5
+
+      - name: Derleme çıktısını yükle
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: packages/web/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Yayınla
+        id: deployment
+        uses: actions/deploy-pages@v4
