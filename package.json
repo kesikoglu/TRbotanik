@@ -1,0 +1,40 @@
+{
+  "name": "trbotanik",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Türkiye botanik çeşitliliği haritası — Davis kareleme sistemi üzerinde taksonomik keşif",
+  "workspaces": [
+    "packages/shared",
+    "packages/web"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "data:border": "node scripts/extract-turkiye-border.mjs",
+    "data:grid": "node scripts/build-davis-grid.mjs",
+    "data:fixtures": "node scripts/make-fixtures.mjs",
+    "data:all": "npm run build -w @trbotanik/shared && npm run data:border && npm run data:grid && npm run data:fixtures",
+    "dev": "npm run dev -w @trbotanik/web",
+    "build": "npm run build -w @trbotanik/shared && npm run build -w @trbotanik/web",
+    "preview": "npm run preview -w @trbotanik/web",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc -b --pretty",
+    "e2e": "playwright test",
+    "prepare": "npm run data:all"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.50.0",
+    "@testing-library/jest-dom": "^6.6.0",
+    "@testing-library/react": "^16.1.0",
+    "@turf/turf": "^7.3.5",
+    "@types/node": "^22.10.0",
+    "jsdom": "^26.0.0",
+    "topojson-client": "^3.1.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0",
+    "world-atlas": "^2.0.2"
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "composite": true,
+    "outDir": "./dist-types",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "allowImportingTsExtensions": false,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "types": ["vite/client", "geojson"]
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.json"],
+  "references": [{ "path": "../shared/tsconfig.json" }]
+}

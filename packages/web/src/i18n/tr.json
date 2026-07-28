@@ -1,0 +1,175 @@
+{
+  "app": {
+    "title": "TRbotanik",
+    "subtitle": "Türkiye Botanik Çeşitliliği Haritası",
+    "loading": "Veri yükleniyor…",
+    "loadError": "Veri yüklenemedi",
+    "retry": "Yeniden dene"
+  },
+  "stats": {
+    "taxa": "takson",
+    "families": "familya",
+    "records": "kayıt",
+    "endemic": "endemik",
+    "squares": "Davis karesi"
+  },
+  "notice": {
+    "fixtureTitle": "Örnek veri",
+    "fixtureBody": "Takson adları ve sınıflandırma gerçektir; yayılış noktaları sentetik olarak üretilmiştir ve gerçek gözlem kaydı değildir. Bilimsel amaçla kullanılamaz."
+  },
+  "filter": {
+    "searchLabel": "Takson ara",
+    "searchPlaceholder": "Latince veya Türkçe ad…",
+    "taxonomy": "Taksonomi",
+    "facets": "Filtreler",
+    "endemicOnly": "Yalnızca endemik",
+    "withRecords": "Kayıtlı taksonlar",
+    "clear": "Filtreleri temizle",
+    "activeSelection": "Seçim: {{name}}",
+    "noResults": "Eşleşen takson bulunamadı.",
+    "resultCount": "{{count}} takson"
+  },
+  "rank": {
+    "CLASS": "Sınıf",
+    "ORDER": "Takım",
+    "FAMILY": "Familya",
+    "GENUS": "Cins",
+    "SPECIES": "Tür",
+    "SUBSPECIES": "Alttür",
+    "VARIETY": "Varyete"
+  },
+  "map": {
+    "modeDavis": "Davis kareleri",
+    "modePoints": "Noktalar",
+    "modeHeatmap": "Isı haritası",
+    "resetView": "Görünümü sıfırla",
+    "basemapOffline": "Çevrimdışı altlık — uydu görüntüsü yüklenmiyor",
+    "squareLabel": "Davis karesi",
+    "basemapEox": "EOX Sentinel-2 (uydu)",
+    "basemapEsri": "Esri World Imagery (uydu)",
+    "basemapMaptiler": "MapTiler (uydu)"
+  },
+  "legend": {
+    "title": "Lejant",
+    "metric": "Gösterim",
+    "metricSpecies": "Tür zenginliği",
+    "metricEndemic": "Endemik tür sayısı",
+    "metricRecords": "Kayıt sayısı",
+    "metricEndemismRate": "Endemizm oranı (%)",
+    "methodNote": "Kayıt sayısı toplayıcı çabasını yansıtır; biyoçeşitlilik ölçütü olarak tür zenginliği tercih edilmelidir.",
+    "pointsGbif": "Herbaryum / GBIF kaydı",
+    "pointsCommunity": "Topluluk katkısı (doğrulanmamış)",
+    "noData": "Kayıt yok"
+  },
+  "popup": {
+    "speciesInSquare": "{{count}} tür",
+    "recordsInSquare": "{{count}} kayıt",
+    "endemicInSquare": "{{count}} endemik",
+    "openDetail": "Ayrıntıyı aç"
+  },
+  "detail": {
+    "empty": "Haritadan bir kare veya listeden bir tür seçin.",
+    "close": "Kapat",
+    "groupNomenclature": "Nomenklatür",
+    "groupClassification": "Sınıflandırma",
+    "groupBiology": "Biyoloji ve ekoloji",
+    "groupConservation": "Koruma ve biyocoğrafya",
+    "groupDistribution": "Yayılış",
+    "groupImages": "Görseller",
+    "completeness": "Veri bütünlüğü %{{percent}}",
+    "zoomToSquare": "Bu kareye yakınlaş"
+  },
+  "attr": {
+    "acceptedName": "Kabul edilen ad",
+    "authorship": "Yazar",
+    "taxonomicStatus": "Taksonomik durum",
+    "synonyms": "Sinonimler",
+    "publishedIn": "İlk yayın",
+    "class": "Sınıf",
+    "order": "Takım",
+    "family": "Familya",
+    "genus": "Cins",
+    "vernacularTr": "Türkçe ad",
+    "vernacularEn": "İngilizce ad",
+    "habit": "Yaşam formu",
+    "lifeForm": "Raunkiaer formu",
+    "habitat": "Habitat",
+    "altitudeRange": "Yükselti aralığı",
+    "floweringPeriod": "Çiçeklenme dönemi",
+    "fruitingPeriod": "Meyvelenme dönemi",
+    "substrate": "Substrat",
+    "endemism": "Endemizm",
+    "iucn": "IUCN kategorisi",
+    "floristicElement": "Floristik element",
+    "davisSquaresLiterature": "Davis kareleri (literatür)",
+    "davisSquaresObserved": "Davis kareleri (kayıtlardan)",
+    "occurrenceCount": "Kayıt sayısı",
+    "yearRange": "Kayıt yılları",
+    "elevationObserved": "Gözlenen yükselti"
+  },
+  "value": {
+    "yes": "Evet",
+    "no": "Hayır",
+    "endemicYes": "Türkiye'ye endemik",
+    "endemicNo": "Endemik değil",
+    "none": "Yok",
+    "missing": "veri yok",
+    "missingReason": {
+      "kaynakta-yok": "kaynak veri setinde bulunmuyor",
+      "henuz-kuratorlenmedi": "henüz küratörlenmedi",
+      "uygulanamaz": "bu takson için uygulanamaz"
+    },
+    "metersRange": "{{min}}–{{max}} m",
+    "monthRange": "{{start}}–{{end}}",
+    "yearRange": "{{start}}–{{end}}"
+  },
+  "habit": {
+    "agac": "Ağaç",
+    "cali": "Çalı",
+    "calimsi": "Çalımsı",
+    "cok-yillik-ot": "Çok yıllık ot",
+    "iki-yillik-ot": "İki yıllık ot",
+    "tek-yillik-ot": "Tek yıllık ot",
+    "geofit": "Geofit (soğanlı/yumrulu)",
+    "tirmanici": "Tırmanıcı",
+    "parazit": "Parazit",
+    "sukkulent": "Sukkulent"
+  },
+  "month": {
+    "1": "Ocak",
+    "2": "Şubat",
+    "3": "Mart",
+    "4": "Nisan",
+    "5": "Mayıs",
+    "6": "Haziran",
+    "7": "Temmuz",
+    "8": "Ağustos",
+    "9": "Eylül",
+    "10": "Ekim",
+    "11": "Kasım",
+    "12": "Aralık"
+  },
+  "provenance": {
+    "label": "Kaynak",
+    "gbif": "GBIF",
+    "powo": "POWO",
+    "inaturalist": "iNaturalist",
+    "euromed": "Euro+Med",
+    "bizimbitkiler": "Türkiye Bitkileri Listesi",
+    "flora-of-turkey": "Flora of Turkey",
+    "iucn": "IUCN",
+    "curated": "Küratör",
+    "inferred": "Türetilmiş",
+    "fixture": "Örnek veri"
+  },
+  "image": {
+    "placeholder": "Yer tutucu görsel — gerçek fotoğraf değildir",
+    "photographer": "Fotoğraf",
+    "license": "Lisans"
+  },
+  "lang": {
+    "switch": "Language",
+    "tr": "Türkçe",
+    "en": "English"
+  }
+}

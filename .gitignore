@@ -1,0 +1,31 @@
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Ingest ham verisi — büyük, yeniden üretilebilir
+data/raw/
+
+# Test / araç çıktıları
+coverage/
+playwright-report/
+test-results/
+screenshots/
+
+# Ortam
+.env
+.env.local
+.env.*.local
+
+# İşletim sistemi
+.DS_Store
+Thumbs.db
+
+# TypeScript proje derleme çıktısı
+dist-types/
+
+# Üretilen örnek (fixture) veri — `npm run data:all` ile yeniden üretilir.
+# Referans geometri (geo/) commit edilir; sentetik veri edilmez.
+packages/web/public/data/taxonomy.json
+packages/web/public/data/occurrences.json
+packages/web/public/data/details.json
+packages/web/public/data/manifest.json

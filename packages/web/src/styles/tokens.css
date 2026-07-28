@@ -1,0 +1,65 @@
+/**
+ * Tasarım değişkenleri.
+ *
+ * Choropleth rampası, renk körlüğüne dayanıklı ve akademik yayında gri tonlamaya
+ * çevrildiğinde de okunabilen sıralı bir palettir (viridis türevi). Sıralı verinin
+ * sırasını koruduğu için tür zenginliği gibi büyüklüklerde doğru okunur.
+ */
+:root {
+  /* Yüzeyler */
+  --c-bg: #0f1613;
+  --c-surface: #16211c;
+  --c-surface-2: #1d2b24;
+  --c-surface-3: #26382f;
+  --c-border: #2f4539;
+  --c-border-strong: #3d5a4a;
+
+  /* Metin */
+  --c-text: #e8f0ea;
+  --c-text-muted: #9fb3a6;
+  --c-text-faint: #6f8579;
+
+  /* Vurgu */
+  --c-accent: #6ee7a8;
+  --c-accent-dim: #3fbf82;
+  --c-accent-ink: #06301d;
+  --c-link: #7dd3fc;
+
+  /* Durum */
+  --c-warn-bg: #4a3a12;
+  --c-warn-border: #a9821f;
+  --c-warn-text: #fde68a;
+  --c-endemic: #f0abfc;
+  --c-community: #fbbf24;
+
+  /* Choropleth rampası — düşükten yükseğe */
+  --ramp-0: #26312e;
+  --ramp-1: #1f4a45;
+  --ramp-2: #1b6357;
+  --ramp-3: #2b7d5f;
+  --ramp-4: #57955f;
+  --ramp-5: #8aab58;
+  --ramp-6: #c2be51;
+  --ramp-7: #fdd05c;
+
+  /* Ölçü */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+
+  --r-sm: 4px;
+  --r-md: 8px;
+  --r-lg: 12px;
+
+  --sidebar-w: 340px;
+  --detail-w: 440px;
+
+  --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  --font-serif: Georgia, 'Times New Roman', serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+  --shadow-panel: 0 8px 32px rgb(0 0 0 / 45%);
+}

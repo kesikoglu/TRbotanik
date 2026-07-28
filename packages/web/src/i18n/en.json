@@ -1,0 +1,175 @@
+{
+  "app": {
+    "title": "TRbotanik",
+    "subtitle": "Botanical Diversity Map of Türkiye",
+    "loading": "Loading data…",
+    "loadError": "Could not load data",
+    "retry": "Retry"
+  },
+  "stats": {
+    "taxa": "taxa",
+    "families": "families",
+    "records": "records",
+    "endemic": "endemic",
+    "squares": "Davis squares"
+  },
+  "notice": {
+    "fixtureTitle": "Sample data",
+    "fixtureBody": "Taxon names and classification are real; the distribution points are synthetically generated and are not actual occurrence records. Not suitable for scientific use."
+  },
+  "filter": {
+    "searchLabel": "Search taxa",
+    "searchPlaceholder": "Scientific or Turkish name…",
+    "taxonomy": "Taxonomy",
+    "facets": "Filters",
+    "endemicOnly": "Endemic only",
+    "withRecords": "With records",
+    "clear": "Clear filters",
+    "activeSelection": "Selected: {{name}}",
+    "noResults": "No matching taxa.",
+    "resultCount": "{{count}} taxa"
+  },
+  "rank": {
+    "CLASS": "Class",
+    "ORDER": "Order",
+    "FAMILY": "Family",
+    "GENUS": "Genus",
+    "SPECIES": "Species",
+    "SUBSPECIES": "Subspecies",
+    "VARIETY": "Variety"
+  },
+  "map": {
+    "modeDavis": "Davis squares",
+    "modePoints": "Points",
+    "modeHeatmap": "Heatmap",
+    "resetView": "Reset view",
+    "basemapOffline": "Offline basemap — satellite imagery not loaded",
+    "squareLabel": "Davis square",
+    "basemapEox": "EOX Sentinel-2 (satellite)",
+    "basemapEsri": "Esri World Imagery (satellite)",
+    "basemapMaptiler": "MapTiler (satellite)"
+  },
+  "legend": {
+    "title": "Legend",
+    "metric": "Metric",
+    "metricSpecies": "Species richness",
+    "metricEndemic": "Endemic species count",
+    "metricRecords": "Record count",
+    "metricEndemismRate": "Endemism rate (%)",
+    "methodNote": "Record counts reflect collector effort; species richness is the preferred measure of diversity.",
+    "pointsGbif": "Herbarium / GBIF record",
+    "pointsCommunity": "Community contribution (unverified)",
+    "noData": "No records"
+  },
+  "popup": {
+    "speciesInSquare": "{{count}} species",
+    "recordsInSquare": "{{count}} records",
+    "endemicInSquare": "{{count}} endemic",
+    "openDetail": "Open details"
+  },
+  "detail": {
+    "empty": "Select a square on the map or a species from the list.",
+    "close": "Close",
+    "groupNomenclature": "Nomenclature",
+    "groupClassification": "Classification",
+    "groupBiology": "Biology and ecology",
+    "groupConservation": "Conservation and biogeography",
+    "groupDistribution": "Distribution",
+    "groupImages": "Images",
+    "completeness": "Data completeness {{percent}}%",
+    "zoomToSquare": "Zoom to this square"
+  },
+  "attr": {
+    "acceptedName": "Accepted name",
+    "authorship": "Authorship",
+    "taxonomicStatus": "Taxonomic status",
+    "synonyms": "Synonyms",
+    "publishedIn": "Published in",
+    "class": "Class",
+    "order": "Order",
+    "family": "Family",
+    "genus": "Genus",
+    "vernacularTr": "Turkish name",
+    "vernacularEn": "English name",
+    "habit": "Habit",
+    "lifeForm": "Raunkiaer life form",
+    "habitat": "Habitat",
+    "altitudeRange": "Altitude range",
+    "floweringPeriod": "Flowering period",
+    "fruitingPeriod": "Fruiting period",
+    "substrate": "Substrate",
+    "endemism": "Endemism",
+    "iucn": "IUCN category",
+    "floristicElement": "Floristic element",
+    "davisSquaresLiterature": "Davis squares (literature)",
+    "davisSquaresObserved": "Davis squares (from records)",
+    "occurrenceCount": "Record count",
+    "yearRange": "Record years",
+    "elevationObserved": "Observed elevation"
+  },
+  "value": {
+    "yes": "Yes",
+    "no": "No",
+    "endemicYes": "Endemic to Türkiye",
+    "endemicNo": "Not endemic",
+    "none": "None",
+    "missing": "no data",
+    "missingReason": {
+      "kaynakta-yok": "not present in the source dataset",
+      "henuz-kuratorlenmedi": "not yet curated",
+      "uygulanamaz": "not applicable to this taxon"
+    },
+    "metersRange": "{{min}}–{{max}} m",
+    "monthRange": "{{start}}–{{end}}",
+    "yearRange": "{{start}}–{{end}}"
+  },
+  "habit": {
+    "agac": "Tree",
+    "cali": "Shrub",
+    "calimsi": "Subshrub",
+    "cok-yillik-ot": "Perennial herb",
+    "iki-yillik-ot": "Biennial herb",
+    "tek-yillik-ot": "Annual herb",
+    "geofit": "Geophyte (bulb/tuber)",
+    "tirmanici": "Climber",
+    "parazit": "Parasite",
+    "sukkulent": "Succulent"
+  },
+  "month": {
+    "1": "January",
+    "2": "February",
+    "3": "March",
+    "4": "April",
+    "5": "May",
+    "6": "June",
+    "7": "July",
+    "8": "August",
+    "9": "September",
+    "10": "October",
+    "11": "November",
+    "12": "December"
+  },
+  "provenance": {
+    "label": "Source",
+    "gbif": "GBIF",
+    "powo": "POWO",
+    "inaturalist": "iNaturalist",
+    "euromed": "Euro+Med",
+    "bizimbitkiler": "Türkiye Plant List",
+    "flora-of-turkey": "Flora of Turkey",
+    "iucn": "IUCN",
+    "curated": "Curated",
+    "inferred": "Inferred",
+    "fixture": "Sample data"
+  },
+  "image": {
+    "placeholder": "Placeholder image — not an actual photograph",
+    "photographer": "Photo",
+    "license": "License"
+  },
+  "lang": {
+    "switch": "Dil",
+    "tr": "Türkçe",
+    "en": "English"
+  }
+}
