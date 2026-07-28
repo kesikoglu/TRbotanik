@@ -17,6 +17,7 @@
  *   details.json       takson başına tam PlantDetail
  *   manifest.json      sürüm, sayaçlar, veri modu uyarısı
  */
+import { existsSync } from 'node:fs';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -28,10 +29,47 @@ import {
   rollUpCounts,
 } from '@trbotanik/shared';
 import { FIXTURE_TAXA } from './fixtures/taxa.mjs';
+import { speciesKey } from './ingest/nuhungemisiParse.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = resolve(here, '../packages/web/public/data');
 const BORDER = resolve(DATA_DIR, 'geo/turkiye.geojson');
+const NUHUNGEMISI_DERIVED = resolve(here, '../data/nuhungemisi/derived.json');
+
+/**
+ * Nuh'un Gemisi Ulusal Biyolojik Çeşitlilik Veritabanı'ndan türetilen küratörleme
+ * verisi — varsa yüklenir (`npm run data:nuhungemisi` ile üretilir). Yoksa fixture
+ * üretimi bu adımı sessizce atlar; hiçbir taksonun endemizm/IUCN alanı bu kaynaktan
+ * doldurulmaz ve "henüz küratörlenmedi" görünmeye devam eder.
+ *
+ * KISIT: Kaynak veri koordinat içermez ve şu an yalnızca Trakya + Güney Marmara
+ * illerini kapsıyor (bkz. data/nuhungemisi/README.md). Bu yüzden yalnızca ZATEN
+ * bilinen bir taksonun endemizm/IUCN alanını doldurmak için kullanılır; kendi
+ * küratörümüzün belirlediği bir değerin (`t.endemic !== null`) üzerine YAZILMAZ —
+ * resmi kaynak yalnızca boşlukları doldurur, mevcut kararları geçersiz kılmaz.
+ */
+let nuhungemisi = null;
+if (existsSync(NUHUNGEMISI_DERIVED)) {
+  const raw = JSON.parse(await readFile(NUHUNGEMISI_DERIVED, 'utf8'));
+  nuhungemisi = raw;
+  console.log(
+    `ℹ Nuh'un Gemisi verisi yüklendi: ${raw.speciesCount} tür, ` +
+      `${raw.provincesCovered.length}/81 il (${raw.provincesCovered.join(', ')})`,
+  );
+} else {
+  console.log(
+    "ℹ Nuh'un Gemisi verisi bulunamadı (data/nuhungemisi/derived.json) — " +
+      "endemizm/IUCN küratörlemesi bu kaynaktan yapılmayacak. Üretmek için: " +
+      'npm run data:nuhungemisi',
+  );
+}
+
+const IUCN_CODES = new Set(['EX', 'EW', 'CR', 'EN', 'VU', 'NT', 'LC', 'DD', 'NE']);
+
+function officialLookup(scientificName) {
+  if (!nuhungemisi) return null;
+  return nuhungemisi.species[speciesKey(scientificName)] ?? null;
+}
 
 const SEED = 20260728;
 const POINTS_TARGET = 3000;
@@ -217,24 +255,42 @@ function placeholderImage(taxon, index) {
 
 const FLORISTIC = ['Iran-Turan', 'Akdeniz', 'Avrupa-Sibirya', 'Oksin', 'Kozmopolit'];
 
+const NUHUNGEMISI_SOURCE = (partial) => ({
+  source: 'nuhungemisi',
+  retrievedAt: nuhungemisi.generatedAt,
+  url: 'https://nuhungemisi.tarimorman.gov.tr/public/istatistik',
+  citation:
+    "T.C. Tarım ve Orman Bakanlığı, Nuh'un Gemisi Ulusal Biyolojik Çeşitlilik Veritabanı" +
+    (partial ? ` (kısmi kapsam: ${nuhungemisi.provincesCovered.length}/81 il)` : ''),
+});
+
 const details = {};
+let officialEndemismFilled = 0;
+let officialIucnFilled = 0;
+let officialProvincesFilled = 0;
+
 for (const t of FIXTURE_TAXA) {
   const taxonId = idByName.get(t.sp);
   const genus = t.sp.split(' ')[0];
   const own = occurrences.filter((o) => o.taxonId === taxonId);
   const observedSquares = [...new Set(own.map((o) => o.davisSquare))].sort();
+  const official = officialLookup(t.sp);
+  const isPartialCoverage = Boolean(nuhungemisi && nuhungemisi.provincesCovered.length < 81);
 
   const missingReasons = {};
-  if (t.endemic === null) missingReasons.endemism = 'henuz-kuratorlenmedi';
+  if (t.endemic === null && !(official && official.endemism !== null)) {
+    missingReasons.endemism = 'henuz-kuratorlenmedi';
+  }
   if (!t.alt) missingReasons.altitudeRange = 'henuz-kuratorlenmedi';
   if (!t.flw) missingReasons.floweringPeriod = 'henuz-kuratorlenmedi';
   if (!t.habitat) missingReasons.habitat = 'henuz-kuratorlenmedi';
-  missingReasons.iucn = 'henuz-kuratorlenmedi';
+  if (!official?.iucnCode) missingReasons.iucn = 'henuz-kuratorlenmedi';
   missingReasons.substrate = 'henuz-kuratorlenmedi';
   missingReasons.fruitingPeriod = 'henuz-kuratorlenmedi';
   missingReasons.publishedIn = 'henuz-kuratorlenmedi';
   missingReasons.davisSquares = 'henuz-kuratorlenmedi';
   missingReasons.floristicElement = 'henuz-kuratorlenmedi';
+  if (!official) missingReasons.officialProvinces = 'kaynakta-yok';
 
   const lats = own.map((o) => o.lat);
   const lons = own.map((o) => o.lon);
@@ -243,8 +299,42 @@ for (const t of FIXTURE_TAXA) {
 
   // Doldurulmuş öznitelik oranı — arayüzde "veri bütünlüğü" göstergesi
   const trackedFields = ['habit', 'habitat', 'altitudeRange', 'floweringPeriod',
-    'endemism', 'iucn', 'floristicElement', 'davisSquares', 'substrate', 'fruitingPeriod'];
+    'endemism', 'iucn', 'floristicElement', 'davisSquares', 'substrate', 'fruitingPeriod',
+    'officialProvinces'];
   const filled = trackedFields.filter((f) => !missingReasons[f]).length;
+
+  // Endemizm: kendi küratörümüzün belirlediği bir değer varsa (t.endemic !== null)
+  // o kazanır; yalnızca "emin değiliz" durumunda ve resmi kaynak bir sınıflandırma
+  // veriyorsa boşluk resmi veriyle doldurulur.
+  let endemismField;
+  if (t.endemic !== null) {
+    endemismField = sourced({
+      isEndemicToTurkiye: t.endemic,
+      ...(t.endemic ? { scope: 'ulusal' } : {}),
+    });
+  } else if (official && official.endemism !== null) {
+    officialEndemismFilled++;
+    const isEndemic = official.endemism === 'endemik' || official.endemism === 'lokal-endemik';
+    endemismField = sourced(
+      { isEndemicToTurkiye: isEndemic, ...(isEndemic ? { scope: official.endemism === 'lokal-endemik' ? 'yerel' : 'ulusal' } : {}) },
+      NUHUNGEMISI_SOURCE(isPartialCoverage),
+    );
+  } else {
+    endemismField = sourced({ isEndemicToTurkiye: false });
+  }
+
+  const iucnField =
+    official?.iucnCode && IUCN_CODES.has(official.iucnCode)
+      ? (officialIucnFilled++,
+        sourced({ category: official.iucnCode, scope: 'ulusal' }, NUHUNGEMISI_SOURCE(isPartialCoverage)))
+      : sourced(null);
+
+  const officialProvincesField = official
+    ? (officialProvincesFilled++,
+      sourced(official.provinces, {
+        ...NUHUNGEMISI_SOURCE(isPartialCoverage),
+      }))
+    : sourced([]);
 
   details[taxonId] = {
     taxonId,
@@ -263,14 +353,11 @@ for (const t of FIXTURE_TAXA) {
     floweringPeriod: sourced(t.flw ? { startMonth: t.flw[0], endMonth: t.flw[1] } : null),
     fruitingPeriod: sourced(null),
     substrate: sourced(null),
-    endemism: sourced(
-      t.endemic === null
-        ? { isEndemicToTurkiye: false }
-        : { isEndemicToTurkiye: t.endemic, ...(t.endemic ? { scope: 'ulusal' } : {}) },
-    ),
-    iucn: sourced(null),
+    endemism: endemismField,
+    iucn: iucnField,
     floristicElement: sourced(t.endemic === true ? [pick(FLORISTIC)] : []),
     davisSquares: sourced([]),
+    officialProvinces: officialProvincesField,
     observedDavisSquares: observedSquares,
     distribution: {
       occurrenceCount: own.length,
@@ -297,6 +384,13 @@ for (const t of FIXTURE_TAXA) {
     dataCompleteness: Number((filled / trackedFields.length).toFixed(2)),
     _provenanceNote: 'fixture',
   };
+}
+
+if (nuhungemisi) {
+  console.log(
+    `ℹ Nuh'un Gemisi ile dolduruldu: ${officialEndemismFilled} endemizm boşluğu, ` +
+      `${officialIucnFilled} IUCN kategorisi, ${officialProvincesFilled} tür için resmi il listesi`,
+  );
 }
 
 // Görsel kaynağını fixture olarak işaretle

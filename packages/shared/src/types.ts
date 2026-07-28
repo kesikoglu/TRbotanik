@@ -18,6 +18,7 @@ export type SourceId =
   | 'bizimbitkiler'
   | 'flora-of-turkey'
   | 'iucn'
+  | 'nuhungemisi'
   | 'curated'
   | 'inferred'
   | 'fixture';
@@ -246,6 +247,16 @@ export interface PlantDetail {
     lastRecordYear: number | null;
     elevationObserved: AltitudeRange | null;
   };
+
+  /**
+   * Resmi kurum envanterinde (ör. Nuh'un Gemisi Ulusal Biyolojik Çeşitlilik
+   * Veritabanı) bu taksonun kayıtlı olduğu iller. Bu, Davis karesi ataması
+   * DEĞİLDİR — kaynak veri koordinat içermez, yalnızca il düzeyinde bilgi verir.
+   * Bir il birden fazla Davis karesine yayılabildiği için burası ile haritadaki
+   * kareler arasında birebir eşleşme kurulamaz; bu yüzden ayrı bir alan olarak
+   * tutulur ve haritaya değil yalnızca öznitelik tablosuna yansır.
+   */
+  officialProvinces: Sourced<string[]>;
 
   images: PlantImage[];
   identifiers: {

@@ -105,6 +105,7 @@
     "floristicElement": "Floristik element",
     "davisSquaresLiterature": "Davis kareleri (literatür)",
     "davisSquaresObserved": "Davis kareleri (kayıtlardan)",
+    "officialProvinces": "Resmi kayıtlı iller",
     "occurrenceCount": "Kayıt sayısı",
     "yearRange": "Kayıt yılları",
     "elevationObserved": "Gözlenen yükselti"
@@ -162,7 +163,8 @@
     "iucn": "IUCN",
     "curated": "Küratör",
     "inferred": "Türetilmiş",
-    "fixture": "Örnek veri"
+    "fixture": "Örnek veri",
+    "nuhungemisi": "Nuh'un Gemisi"
   },
   "image": {
     "placeholder": "Yer tutucu görsel — gerçek fotoğraf değildir",

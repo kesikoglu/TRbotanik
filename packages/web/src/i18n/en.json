@@ -105,6 +105,7 @@
     "floristicElement": "Floristic element",
     "davisSquaresLiterature": "Davis squares (literature)",
     "davisSquaresObserved": "Davis squares (from records)",
+    "officialProvinces": "Official record provinces",
     "occurrenceCount": "Record count",
     "yearRange": "Record years",
     "elevationObserved": "Observed elevation"
@@ -162,7 +163,8 @@
     "iucn": "IUCN",
     "curated": "Curated",
     "inferred": "Inferred",
-    "fixture": "Sample data"
+    "fixture": "Sample data",
+    "nuhungemisi": "Noah's Ark DB"
   },
   "image": {
     "placeholder": "Placeholder image — not an actual photograph",

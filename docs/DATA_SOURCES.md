@@ -71,6 +71,35 @@ ve açıklayıcı bir `User-Agent` gönderilmelidir.
 
 ---
 
+## 4b. Resmi il bazlı envanter — Nuh'un Gemisi Ulusal Biyolojik Çeşitlilik Veritabanı
+
+| | |
+|---|---|
+| **Ne** | T.C. Tarım ve Orman Bakanlığı'nın tür envanteri; il bazında endemizm ve IUCN sınıflandırması |
+| **Kaynak** | `nuhungemisi.tarimorman.gov.tr/public/istatistik` (manuel portal dışa aktarımı) |
+| **Konum** | `data/nuhungemisi/*.xlsx` — bkz. o klasördeki README |
+| **Kritik kısıt** | **Koordinat içermez**, yalnızca il adı verir. Haritaya nokta/Davis karesi eklemez |
+| **Kapsam** | Şu an yalnızca I-II. Bölge Müdürlüğü (10 il, Trakya + Güney Marmara) — 81 ilin küçük bir alt kümesi |
+| **Lisans** | Belirsiz — resmi bir devlet dışa aktarımı, açık lisans beyanı bulunamadı. Yalnızca dahili küratörleme için kullanılıyor; üçüncü taraf paylaşımı öncesi Bakanlık ile teyit edilmeli |
+
+Bu kaynak GBIF'in hiç sağlamadığı iki alanı doldurur: **resmi Türkçe endemizm
+durumu** ve **resmi IUCN kategorisi**. `scripts/ingest/nuhungemisi.mjs` bu dosyaları
+işleyip `data/nuhungemisi/derived.json` üretir (gitignore'da, `npm run
+data:nuhungemisi` ile yeniden oluşturulur); `make-fixtures.mjs` bunu yalnızca
+**henüz bilinmeyen** taksonların boşluklarını doldurmak için kullanır — kendi
+küratörümüzün belirlediği bir değerin üzerine asla yazmaz.
+
+Ayrıca `PlantDetail.officialProvinces` alanı, bir türün bu veritabanında hangi
+illerde kayıtlı olduğunu gösterir. Bu, Davis karesi ile **birebir eşleşmez** (bir il
+birden fazla kareye yayılabilir) — bu yüzden haritaya değil yalnızca öznitelik
+tablosuna yansır.
+
+**Genişletme:** Portaldan yeni bölge/il dışa aktarımı `data/nuhungemisi/` altına
+`.xlsx` olarak eklenip `npm run data:nuhungemisi` çalıştırıldığında kapsam otomatik
+genişler; kod değişikliği gerekmez.
+
+---
+
 ## 5. Taksonomi ve tür bilgisi
 
 | Kaynak | Kullanım | Not |

@@ -183,6 +183,10 @@ export function buildAttributeGroups(detail: PlantDetail, t: Translate): Attribu
               : { kind: 'missing', reason: 'kaynakta-yok' },
           source: 'inferred',
         },
+        row(detail, 'officialProvinces', 'attr.officialProvinces', detail.officialProvinces, (list) => ({
+          kind: 'list',
+          items: list,
+        })),
         {
           key: 'occurrenceCount',
           labelKey: 'attr.occurrenceCount',

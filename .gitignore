@@ -33,3 +33,6 @@ packages/web/public/data/manifest.json
 # Tek dosyalık / paylaşım derlemeleri
 packages/web/dist-single/
 dist-artifact/
+
+# Nuh'un Gemisi ham dışa aktarımları commit edilir, türetilmiş çıktı edilmez
+data/nuhungemisi/derived.json

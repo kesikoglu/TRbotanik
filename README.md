@@ -139,6 +139,16 @@ GBIF indirme DOI'si burada gösterilir.
 
 Yol haritasının tamamı için `docs/PLAN.md`.
 
+### Resmi il bazlı küratörleme — Nuh'un Gemisi
+
+`data/nuhungemisi/` altında T.C. Tarım ve Orman Bakanlığı'nın Nuh'un Gemisi Ulusal
+Biyolojik Çeşitlilik Veritabanı'ndan dışa aktarılan dosyalar bulunur. Bu kaynak
+koordinat içermez (haritaya nokta ekleyemez) ama **resmi endemizm durumu ve IUCN
+kategorisi** sağlar — GBIF'in hiç vermediği alanlar. `npm run data:nuhungemisi`
+bu dosyaları işler; `data:all` zincirine dahildir. Şu an yalnızca 10/81 il kapsanıyor;
+yeni bölge dışa aktarımı eklendiğinde kapsam otomatik genişler (bkz.
+`data/nuhungemisi/README.md`).
+
 ---
 
 ## Testler
