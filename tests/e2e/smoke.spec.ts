@@ -80,6 +80,53 @@ test('türe tıklayınca öznitelik tablosu ve görseller açılır', async ({ p
   await page.screenshot({ path: 'screenshots/03-tur-detayi.png' });
 });
 
+test('türe tıklayınca harita o türün konumuna odaklanır', async ({ page }) => {
+  // window.__trbotanikMap yalnızca VITE_EXPOSE_MAP_DEBUG=1 ile derlenen e2e
+  // yapılandırmasında vardır (bkz. playwright.config.ts); üretim derlemesinde yok.
+  const getZoom = () => page.evaluate(() => window.__trbotanikMap.getZoom());
+  const getHighlightCount = () =>
+    page.evaluate(() => {
+      const source = window.__trbotanikMap.getSource('species-highlight') as unknown as {
+        _data?: { geojson?: { features?: unknown[] } };
+      };
+      return source?._data?.geojson?.features?.length ?? 0;
+    });
+
+  expect(await getHighlightCount()).toBe(0);
+  const zoomBefore = await getZoom();
+
+  await page.getByTestId('taxon-search').fill('Cedrus');
+  await page.waitForTimeout(400);
+  await page.getByTestId('taxon-tree').getByText('Cedrus libani').click();
+  await page.waitForTimeout(1000); // fitBounds animasyonu (700ms) + pay
+
+  // Regresyon testi: bu tür haritada seçilmeden önce hiçbir konum göstermiyordu.
+  expect(await getHighlightCount()).toBeGreaterThan(0);
+  expect(await getZoom()).toBeGreaterThan(zoomBefore);
+
+  await page.screenshot({ path: 'screenshots/09-tur-konumu.png' });
+
+  // Kapatınca vurgu temizlenir
+  await page.getByTestId('detail-close').click();
+  await page.waitForTimeout(300);
+  expect(await getHighlightCount()).toBe(0);
+});
+
+test('altlık harita seçenekleri arasında geçiş yapılabilir', async ({ page }) => {
+  await expect(page.getByTestId('basemap-offline')).toHaveAttribute('aria-pressed', 'true');
+
+  await page.getByTestId('basemap-eox-s2cloudless').click();
+  await expect(page.getByTestId('basemap-eox-s2cloudless')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByTestId('basemap-offline')).toHaveAttribute('aria-pressed', 'false');
+
+  // Altlık değişse de kendi katmanlarımız (Davis kareleri) yerinde kalmalı
+  await expect(page.locator('.davis-label')).toHaveCount(29);
+
+  await page.getByTestId('basemap-offline').click();
+  await expect(page.getByTestId('basemap-offline')).toHaveAttribute('aria-pressed', 'true');
+  await page.screenshot({ path: 'screenshots/10-altlik-secici.png' });
+});
+
 test('haritada kareye tıklayınca o karedeki türler listelenir', async ({ page }) => {
   const canvas = page.getByTestId('map-canvas');
   const box = await canvas.boundingBox();

@@ -1,15 +1,21 @@
-import { useEffect, useMemo, useRef } from 'react';
-import maplibregl, { type Map as MapLibreMap, type StyleSpecification } from 'maplibre-gl';
+import { useEffect, useRef } from 'react';
+import maplibregl, {
+  type Map as MapLibreMap,
+  type PropertyValueSpecification,
+  type StyleSpecification,
+} from 'maplibre-gl';
 import { DAVIS_CODES, davisSquareBounds, type DavisCode } from '@trbotanik/shared';
 import type { Dataset } from '../data/dataset';
 import { metricValue, type SelectionResult } from '../domain/filter';
 import { useAppStore } from '../state/useAppStore';
-import { resolveBasemap } from './basemaps';
+import { getBasemap, type BasemapDefinition } from './basemaps';
 import { CHOROPLETH_RAMP, MAP_COLORS, NO_DATA_COLOR, TURKIYE_VIEW_BOUNDS } from './theme';
 
 const SRC_TURKIYE = 'turkiye';
 const SRC_DAVIS = 'davis';
 const SRC_POINTS = 'points';
+const SRC_SPECIES = 'species-highlight';
+const SRC_BASEMAP_RASTER = 'basemap-raster';
 
 const L_LAND = 'turkiye-land';
 const L_LAND_LINE = 'turkiye-outline';
@@ -19,10 +25,20 @@ const L_DAVIS_SELECTED = 'davis-selected';
 const L_CLUSTERS = 'point-clusters';
 const L_POINTS = 'point-single';
 const L_HEATMAP = 'point-heatmap';
+const L_SPECIES_HL = 'species-highlight-points';
 
 interface Props {
   dataset: Dataset;
   selection: SelectionResult;
+}
+
+function davisFillOpacity(drawLandFill: boolean): PropertyValueSpecification<number> {
+  return [
+    'case',
+    ['boolean', ['feature-state', 'hover'], false],
+    0.92,
+    drawLandFill ? 0.85 : 0.62,
+  ];
 }
 
 /**
@@ -35,6 +51,9 @@ interface Props {
  * - Kare etiketleri sembol katmanı yerine HTML işaretçisidir. Sembol katmanı MapLibre'de
  *   uzak bir `glyphs` adresi gerektirir; HTML işaretçisi bu ağ bağımlılığını tamamen
  *   ortadan kaldırır ve uygulama çevrimdışı da tam çalışır.
+ * - Altlık değişimi `map.setStyle()` ile TÜM katmanları silmez: yalnızca karo
+ *   kaynağı/katmanı sökülüp yeniden takılır (bkz. `applyBasemap`). Bu, choropleth
+ *   feature-state'lerini ve etkileşim dinleyicilerini korur.
  */
 export function MapCanvas({ dataset, selection }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -44,27 +63,69 @@ export function MapCanvas({ dataset, selection }: Props) {
   const hoveredRef = useRef<DavisCode | null>(null);
   /** Kullanıcı haritayı elle kaydırdı/yakınlaştırdı mı — yeniden boyutlanmada görünümü korumak için */
   const userMovedRef = useRef(false);
+  /** Şu an takılı olan altlık tanımı — değişimde önce bunun katman/kaynakları sökülür */
+  const currentBasemapRef = useRef<BasemapDefinition | null>(null);
 
   const mapMode = useAppStore((s) => s.mapMode);
   const metric = useAppStore((s) => s.metric);
   const selectedSquare = useAppStore((s) => s.selectedSquare);
+  const selectedSpeciesId = useAppStore((s) => s.selectedSpeciesId);
   const selectSquare = useAppStore((s) => s.selectSquare);
   const selectSpecies = useAppStore((s) => s.selectSpecies);
+  const basemapId = useAppStore((s) => s.basemapId);
+  const setBasemapTileError = useAppStore((s) => s.setBasemapTileError);
 
-  const basemap = useMemo(() => resolveBasemap(), []);
+  /**
+   * Etkin altlığın karo kaynağını/katmanını takar.
+   *
+   * Önceki altlığın katman ve kaynakları önce sökülür; yeni raster katmanı `L_LAND`'in
+   * hemen altına eklenir (görsel olarak Davis/sınır katmanlarının altında kalır).
+   * `map.setStyle()` KULLANILMAZ — o, tüm choropleth feature-state'lerini ve bizim
+   * eklediğimiz her şeyi sıfırlardı.
+   */
+  function applyBasemap(map: MapLibreMap, def: BasemapDefinition) {
+    const previous = currentBasemapRef.current;
+    if (previous) {
+      for (const layer of previous.layers) {
+        if (map.getLayer(layer.id)) map.removeLayer(layer.id);
+      }
+      for (const sourceId of Object.keys(previous.sources)) {
+        if (map.getSource(sourceId)) map.removeSource(sourceId);
+      }
+    }
+
+    for (const [sourceId, source] of Object.entries(def.sources)) {
+      if (!map.getSource(sourceId)) map.addSource(sourceId, source);
+    }
+    for (const layer of def.layers) {
+      if (!map.getLayer(layer.id) && map.getLayer(L_LAND)) map.addLayer(layer, L_LAND);
+    }
+
+    if (map.getLayer(L_LAND)) {
+      map.setLayoutProperty(L_LAND, 'visibility', def.drawLandFill ? 'visible' : 'none');
+    }
+    if (map.getLayer(L_DAVIS_FILL)) {
+      map.setPaintProperty(L_DAVIS_FILL, 'fill-opacity', davisFillOpacity(def.drawLandFill));
+    }
+    map.setMaxZoom(def.maxZoom);
+
+    currentBasemapRef.current = def;
+    setBasemapTileError(false);
+  }
 
   /* ── Harita kurulumu (bir kez) ──────────────────────────────────── */
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
+    const initialBasemap = getBasemap(useAppStore.getState().basemapId);
+
     const style: StyleSpecification = {
       version: 8,
       // Sembol katmanı kullanmıyoruz; glyph adresi gerekmez (bkz. bileşen açıklaması).
-      sources: { ...basemap.sources },
-      layers: [
-        { id: 'background', type: 'background', paint: { 'background-color': MAP_COLORS.background } },
-        ...basemap.layers,
-      ],
+      // Altlık karoları burada değil, 'load' sonrası applyBasemap() ile eklenir —
+      // böylece basemap değişimi de aynı kod yolunu kullanır.
+      sources: {},
+      layers: [{ id: 'background', type: 'background', paint: { 'background-color': MAP_COLORS.background } }],
     };
 
     const map = new maplibregl.Map({
@@ -72,7 +133,7 @@ export function MapCanvas({ dataset, selection }: Props) {
       style,
       bounds: TURKIYE_VIEW_BOUNDS,
       fitBoundsOptions: { padding: 24 },
-      maxZoom: basemap.maxZoom,
+      maxZoom: initialBasemap.maxZoom,
       minZoom: 4,
       attributionControl: false,
     });
@@ -83,14 +144,13 @@ export function MapCanvas({ dataset, selection }: Props) {
     map.on('load', () => {
       /* Ülke sınırı */
       map.addSource(SRC_TURKIYE, { type: 'geojson', data: dataset.turkiye });
-      if (basemap.drawLandFill) {
-        map.addLayer({
-          id: L_LAND,
-          type: 'fill',
-          source: SRC_TURKIYE,
-          paint: { 'fill-color': MAP_COLORS.land },
-        });
-      }
+      map.addLayer({
+        id: L_LAND,
+        type: 'fill',
+        source: SRC_TURKIYE,
+        layout: { visibility: initialBasemap.drawLandFill ? 'visible' : 'none' },
+        paint: { 'fill-color': MAP_COLORS.land },
+      });
 
       /* Davis kareleri — promoteId ile feature-state anahtarı `code` olur */
       map.addSource(SRC_DAVIS, {
@@ -115,12 +175,7 @@ export function MapCanvas({ dataset, selection }: Props) {
               ...CHOROPLETH_RAMP.flatMap((color, i) => [i / (CHOROPLETH_RAMP.length - 1), color]),
             ],
           ],
-          'fill-opacity': [
-            'case',
-            ['boolean', ['feature-state', 'hover'], false],
-            0.92,
-            basemap.drawLandFill ? 0.85 : 0.62,
-          ],
+          'fill-opacity': davisFillOpacity(initialBasemap.drawLandFill),
         },
       });
 
@@ -136,10 +191,17 @@ export function MapCanvas({ dataset, selection }: Props) {
         type: 'line',
         source: SRC_DAVIS,
         paint: {
-          'line-color': MAP_COLORS.gridLineSelected,
+          'line-color': [
+            'case',
+            ['boolean', ['feature-state', 'speciesMember'], false],
+            MAP_COLORS.speciesHighlight,
+            MAP_COLORS.gridLineSelected,
+          ],
           'line-width': [
             'case',
             ['boolean', ['feature-state', 'selected'], false],
+            2.5,
+            ['boolean', ['feature-state', 'speciesMember'], false],
             2.5,
             ['boolean', ['feature-state', 'hover'], false],
             1.6,
@@ -221,6 +283,28 @@ export function MapCanvas({ dataset, selection }: Props) {
         },
       });
 
+      /* Kenar çubuğundan seçilen türün konum vurgusu — mod ne olursa olsun görünür */
+      map.addSource(SRC_SPECIES, {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] },
+      });
+
+      map.addLayer({
+        id: L_SPECIES_HL,
+        type: 'circle',
+        source: SRC_SPECIES,
+        paint: {
+          'circle-color': MAP_COLORS.speciesHighlight,
+          'circle-radius': ['interpolate', ['linear'], ['zoom'], 4, 4.5, 10, 9],
+          'circle-opacity': 0.95,
+          'circle-stroke-width': 1.5,
+          'circle-stroke-color': 'rgba(10, 14, 12, 0.8)',
+        },
+      });
+
+      /* Altlık karoları — L_LAND'in altına eklenir */
+      applyBasemap(map, initialBasemap);
+
       /* Etkileşim */
       map.on('mousemove', L_DAVIS_FILL, (event) => {
         const code = event.features?.[0]?.properties?.['code'] as DavisCode | undefined;
@@ -259,7 +343,7 @@ export function MapCanvas({ dataset, selection }: Props) {
         if (!feature) return;
         map.easeTo({
           center: (feature.geometry as GeoJSON.Point).coordinates as [number, number],
-          zoom: Math.min(map.getZoom() + 2, basemap.maxZoom),
+          zoom: Math.min(map.getZoom() + 2, currentBasemapRef.current?.maxZoom ?? 12),
         });
       });
 
@@ -271,6 +355,16 @@ export function MapCanvas({ dataset, selection }: Props) {
           map.getCanvas().style.cursor = '';
         });
       }
+
+      /**
+       * Karo yükleme hatası — sessizce boş/gri harita bırakmak yerine kullanıcıya
+       * bildirilir. Bu ortamdan doğrulanamayan uydu altlıklarının (bkz. basemaps.ts)
+       * gerçek bir tarayıcıda çalışıp çalışmadığını da bu yoldan görebiliriz.
+       */
+      map.on('error', (event) => {
+        const sourceId = (event as unknown as { sourceId?: string }).sourceId;
+        if (sourceId === SRC_BASEMAP_RASTER) setBasemapTileError(true);
+      });
 
       /* Kare etiketleri — HTML işaretçisi, glyph gerekmez */
       for (const feature of dataset.davisGrid.features) {
@@ -286,6 +380,13 @@ export function MapCanvas({ dataset, selection }: Props) {
         labelMarkersRef.current.push(marker);
       }
 
+      // Yalnızca e2e testleri için: harita örneğini pencereye açar, böylece Playwright
+      // konum vurgusu / zoom davranışını DOM dışından da doğrulayabilir. Üretim
+      // derlemesinde bu bayrak tanımlı değildir ve blok tamamen elenir.
+      if (import.meta.env['VITE_EXPOSE_MAP_DEBUG'] === '1') {
+        (window as unknown as { __trbotanikMap: MapLibreMap }).__trbotanikMap = map;
+      }
+
       readyRef.current = true;
       map.fire('trbotanik.ready');
       containerRef.current?.setAttribute('data-map-ready', 'true');
@@ -298,8 +399,9 @@ export function MapCanvas({ dataset, selection }: Props) {
      *
      * MapLibre kendi kendine yeniden boyutlanmaz ve `resize()` merkez ile
      * yakınlaştırmayı koruduğu için bölme daraldığında ülkenin bir kısmı görünürden
-     * çıkar. Kullanıcı haritayı henüz elle oynatmadıysa Türkiye görünümüne geri
-     * oturtuyoruz; oynattıysa onun seçtiği görünüme dokunmuyoruz.
+     * çıkar. Kullanıcı haritayı henüz elle oynatmadıysa (ya da bir türe/kareye
+     * odaklanma gibi kasıtlı bir gezinme yapılmadıysa) Türkiye görünümüne geri
+     * oturtuyoruz; aksi halde kullanıcının/uygulamanın seçtiği görünüme dokunmuyoruz.
      */
     map.on('dragstart', () => {
       userMovedRef.current = true;
@@ -326,9 +428,23 @@ export function MapCanvas({ dataset, selection }: Props) {
       map.remove();
       mapRef.current = null;
     };
-    // dataset ve basemap oturum boyunca sabittir; harita yalnızca bir kez kurulur
+    // dataset oturum boyunca sabittir; harita yalnızca bir kez kurulur.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  /* ── Altlık değişimi ─────────────────────────────────────────────── */
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    const update = () => applyBasemap(map, getBasemap(basemapId));
+
+    if (readyRef.current) update();
+    else map.once('trbotanik.ready', update);
+    // applyBasemap her render'da yeniden oluşur ama yalnızca burada çağrılır;
+    // eklenmesi gereken bağımlılık yalnızca hangi altlığın istendiğidir.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [basemapId]);
 
   /* ── Choropleth: filtre veya ölçüt değişince feature-state güncelle ─ */
   useEffect(() => {
@@ -431,6 +547,90 @@ export function MapCanvas({ dataset, selection }: Props) {
     if (readyRef.current) update();
     else map.once('trbotanik.ready', update);
   }, [selectedSquare]);
+
+  /* ── Seçili tür vurgusu — kenar çubuğundan bir tür seçilince yerini göster ── */
+  const previousSpeciesSquaresRef = useRef<Set<DavisCode>>(new Set());
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    const update = () => {
+      const source = map.getSource(SRC_SPECIES) as maplibregl.GeoJSONSource | undefined;
+      if (!source) return;
+
+      for (const code of previousSpeciesSquaresRef.current) {
+        map.setFeatureState({ source: SRC_DAVIS, id: code }, { speciesMember: false });
+      }
+      previousSpeciesSquaresRef.current = new Set();
+
+      if (selectedSpeciesId === null) {
+        source.setData({ type: 'FeatureCollection', features: [] });
+        return;
+      }
+
+      // Aktif taksonomi/faset filtresinden BAĞIMSIZ olarak, veri setinin tamamından bu
+      // taksonun kayıtlarını alıyoruz — kullanıcı dar bir filtre uygulasa bile "bu tür
+      // nerede?" sorusunun yanıtı her zaman eksiksiz olsun.
+      const occurrences = dataset.occurrences.filter((o) => o.taxonId === selectedSpeciesId);
+
+      source.setData({
+        type: 'FeatureCollection',
+        features: occurrences.map((occ) => ({
+          type: 'Feature' as const,
+          properties: { id: occ.id },
+          geometry: { type: 'Point' as const, coordinates: [occ.lon, occ.lat] },
+        })),
+      });
+
+      const squares = new Set<DavisCode>();
+      let minLon = Infinity;
+      let minLat = Infinity;
+      let maxLon = -Infinity;
+      let maxLat = -Infinity;
+      for (const occ of occurrences) {
+        if (occ.davisSquare) squares.add(occ.davisSquare);
+        minLon = Math.min(minLon, occ.lon);
+        maxLon = Math.max(maxLon, occ.lon);
+        minLat = Math.min(minLat, occ.lat);
+        maxLat = Math.max(maxLat, occ.lat);
+      }
+
+      // Georeferanslı kaydı olmayan bir takson için, literatürde bildirilen Davis
+      // karelerine düşülür (Faz 6'da GBIF verisiyle bu durum gerçekten oluşabilir).
+      if (occurrences.length === 0) {
+        const literatureSquares = dataset.details[selectedSpeciesId]?.davisSquares.value ?? [];
+        for (const code of literatureSquares) {
+          squares.add(code);
+          const [w, s, e, n] = davisSquareBounds(code);
+          minLon = Math.min(minLon, w);
+          maxLon = Math.max(maxLon, e);
+          minLat = Math.min(minLat, s);
+          maxLat = Math.max(maxLat, n);
+        }
+      }
+
+      for (const code of squares) {
+        map.setFeatureState({ source: SRC_DAVIS, id: code }, { speciesMember: true });
+      }
+      previousSpeciesSquaresRef.current = squares;
+
+      if (Number.isFinite(minLon) && Number.isFinite(minLat)) {
+        // Kasıtlı bir odaklanma; sonraki panel-yeniden-boyutlandırmada Türkiye
+        // görünümüne sıfırlanmasın (bkz. ResizeObserver açıklaması yukarıda).
+        userMovedRef.current = true;
+        map.fitBounds(
+          [
+            [minLon, minLat],
+            [maxLon, maxLat],
+          ],
+          { padding: 90, maxZoom: 9, duration: 700 },
+        );
+      }
+    };
+
+    if (readyRef.current) update();
+    else map.once('trbotanik.ready', update);
+  }, [selectedSpeciesId, dataset.occurrences, dataset.details]);
 
   return <div ref={containerRef} className="map-canvas" data-testid="map-canvas" />;
 }

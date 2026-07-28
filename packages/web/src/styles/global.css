@@ -337,6 +337,25 @@ button {
   left: var(--sp-3);
 }
 
+.map-overlay--stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sp-2);
+}
+
+.basemap-error {
+  max-width: 220px;
+  margin: var(--sp-2) 0 0;
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--c-warn-bg);
+  border: 1px solid var(--c-warn-border);
+  border-radius: var(--r-md);
+  color: var(--c-warn-text);
+  font-size: 11.5px;
+  line-height: 1.4;
+}
+
 .map-overlay--bottom-left {
   bottom: var(--sp-5);
   left: var(--sp-3);

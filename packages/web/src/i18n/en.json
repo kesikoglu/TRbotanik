@@ -43,11 +43,13 @@
     "modePoints": "Points",
     "modeHeatmap": "Heatmap",
     "resetView": "Reset view",
-    "basemapOffline": "Offline basemap — satellite imagery not loaded",
+    "basemapOffline": "Offline",
     "squareLabel": "Davis square",
     "basemapEox": "EOX Sentinel-2 (satellite)",
     "basemapEsri": "Esri World Imagery (satellite)",
-    "basemapMaptiler": "MapTiler (satellite)"
+    "basemapMaptiler": "MapTiler (satellite)",
+    "basemapGroup": "Basemap",
+    "tileLoadError": "Satellite tiles failed to load. Check your internet connection or this page's external content permissions; switch back to Offline if the problem persists."
   },
   "legend": {
     "title": "Legend",

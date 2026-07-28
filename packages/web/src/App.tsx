@@ -6,6 +6,7 @@ import { useAppStore } from './state/useAppStore';
 import { MapCanvas } from './map/MapCanvas';
 import { MapControls } from './map/MapControls';
 import { MapLegend } from './map/MapLegend';
+import { BasemapSwitcher } from './map/BasemapSwitcher';
 import { AttributionBar } from './map/AttributionBar';
 import { TaxonomySidebar } from './features/TaxonomySidebar';
 import { DetailPane } from './features/DetailPane';
@@ -112,8 +113,9 @@ function Workspace({ dataset }: { dataset: Dataset }) {
         <div className="map-pane">
           <MapCanvas dataset={dataset} selection={selection} />
 
-          <div className="map-overlay map-overlay--top-left">
+          <div className="map-overlay map-overlay--top-left map-overlay--stack">
             <MapControls />
+            <BasemapSwitcher />
           </div>
           <div className="map-overlay map-overlay--bottom-left" style={{ bottom: 44 }}>
             <MapLegend selection={selection} />

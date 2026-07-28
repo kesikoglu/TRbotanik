@@ -31,6 +31,8 @@ export const MAP_COLORS = {
   /** Topluluk katkısı — kasıtlı olarak farklı renk ve sembol (Faz 3) */
   pointCommunity: '#fbbf24',
   cluster: '#3fbf82',
+  /** Kenar çubuğundan seçilen tek türün vurgusu — endemizm rozetiyle aynı renk ailesi */
+  speciesHighlight: '#f0abfc',
 } as const;
 
 /** Türkiye'yi tam kapsayan başlangıç görünümü. */

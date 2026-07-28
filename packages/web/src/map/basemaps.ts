@@ -128,3 +128,24 @@ export function resolveBasemap(id?: string): BasemapDefinition {
   }
   return basemap;
 }
+
+/** Belirtilen id'ye karşılık gelen tanımı döner; bulunamazsa çevrimdışı altlığa düşer. */
+export function getBasemap(id: string): BasemapDefinition {
+  const basemap = BASEMAPS[id];
+  if (!basemap) return BASEMAPS['offline']!;
+  if (basemap.requiresKey && !maptilerKey) return BASEMAPS['offline']!;
+  return basemap;
+}
+
+/**
+ * Arayüzde gösterilecek altlık listesi, sabit bir sırayla.
+ *
+ * Anahtar gerektiren altlıklar, anahtar tanımlı değilse listeden tamamen çıkarılır —
+ * seçilemeyecek bir seçeneği göstermek yerine.
+ */
+export function listAvailableBasemaps(): BasemapDefinition[] {
+  const order = ['offline', 'eox-s2cloudless', 'esri-imagery', 'maptiler-satellite'];
+  return order
+    .map((id) => BASEMAPS[id])
+    .filter((def): def is BasemapDefinition => Boolean(def && !(def.requiresKey && !maptilerKey)));
+}

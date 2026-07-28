@@ -49,6 +49,7 @@ export default defineConfig({
     env: {
       VITE_DATA_MODE: 'fixture',
       VITE_BASEMAP: 'offline',
+      VITE_EXPOSE_MAP_DEBUG: '1',
     },
   },
 });

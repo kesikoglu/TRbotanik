@@ -43,11 +43,13 @@
     "modePoints": "Noktalar",
     "modeHeatmap": "Isı haritası",
     "resetView": "Görünümü sıfırla",
-    "basemapOffline": "Çevrimdışı altlık — uydu görüntüsü yüklenmiyor",
+    "basemapOffline": "Çevrimdışı",
     "squareLabel": "Davis karesi",
     "basemapEox": "EOX Sentinel-2 (uydu)",
     "basemapEsri": "Esri World Imagery (uydu)",
-    "basemapMaptiler": "MapTiler (uydu)"
+    "basemapMaptiler": "MapTiler (uydu)",
+    "basemapGroup": "Altlık harita",
+    "tileLoadError": "Uydu karoları yüklenemedi. İnternet bağlantınızı veya bu sayfanın dış içerik erişim iznini kontrol edin; sorun sürerse Çevrimdışı altlığa dönün."
   },
   "legend": {
     "title": "Lejant",
