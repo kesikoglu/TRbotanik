@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "preview": "vite preview --port 4173"
+    "preview": "vite preview --port 4173",
+    "build:single": "vite build --config vite.artifact.config.ts"
   },
   "dependencies": {
     "@trbotanik/shared": "*",

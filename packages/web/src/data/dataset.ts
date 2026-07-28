@@ -42,6 +42,13 @@ async function fetchJson<T>(path: string, signal?: AbortSignal): Promise<T> {
 }
 
 export async function loadDataset(signal?: AbortSignal): Promise<Dataset> {
+  // Tek dosyalık derlemede veri paketin içindedir; hiçbir istek yapılmaz.
+  // Normal derlemede bu koşul statik olarak yanlıştır ve modül elenir.
+  if (import.meta.env['VITE_EMBED_DATA'] === '1') {
+    const { EMBEDDED_DATASET } = await import('./embedded');
+    return EMBEDDED_DATASET;
+  }
+
   const [manifest, taxonomy, occurrences, details, davisGrid, turkiye] = await Promise.all([
     fetchJson<DataManifest>('manifest.json', signal),
     fetchJson<TaxonomyFile>('taxonomy.json', signal),

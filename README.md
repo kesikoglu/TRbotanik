@@ -157,3 +157,18 @@ E2E testlerinden biri, uygulamanın **hiçbir dış hosta istek yapmadığını*
 
 Kod: MIT (bkz. `LICENSE`). Veri kaynaklarının lisansları ayrıdır ve
 `docs/DATA_SOURCES.md` içinde tek tek listelenmiştir.
+
+---
+
+## Tek dosyalık paylaşım sürümü
+
+Uygulamanın tamamı — kod, stiller ve veri seti — tek bir HTML dosyasına gömülebilir.
+Bu dosya bir sunucu gerektirmez ve hiçbir dış hosta istek yapmaz:
+
+```bash
+npm run artifact     # → dist-artifact/trbotanik.html (~2,6 MB)
+```
+
+Demo, sunum ve ağa kapalı ortamlarda paylaşım için kullanışlıdır. Gömülü veri yolu
+yalnızca bu derlemede etkindir; normal derlemede koşul statik olarak elenir ve veri
+paketi çıktının içine hiç girmez.

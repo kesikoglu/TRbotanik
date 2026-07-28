@@ -29,3 +29,7 @@ packages/web/public/data/taxonomy.json
 packages/web/public/data/occurrences.json
 packages/web/public/data/details.json
 packages/web/public/data/manifest.json
+
+# Tek dosyalık / paylaşım derlemeleri
+packages/web/dist-single/
+dist-artifact/

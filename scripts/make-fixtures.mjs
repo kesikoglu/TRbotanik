@@ -190,24 +190,18 @@ const CURATED_SOURCE = {
 
 const sourced = (value, provenance = CURATED_SOURCE) => ({ value, provenance });
 
-/** İçi boş bir yer tutucu görsel — git'te ikili dosya tutmadan galeriyi test eder. */
+/**
+ * Yer tutucu görsel kaydı.
+ *
+ * Görselin kendisi burada üretilmez; `isPlaceholder` işaretli kayıtlar için arayüz
+ * SVG'yi çalışma anında taksonun adından türetir. Veri setine 138 adet gömülü
+ * data-URI koymak dosyayı gereksiz yere birkaç yüz kilobayt şişiriyordu.
+ */
 function placeholderImage(taxon, index) {
-  const hue = (taxon.sp.length * 37 + index * 61) % 360;
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
-<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
-<stop offset="0%" stop-color="hsl(${hue} 45% 72%)"/><stop offset="100%" stop-color="hsl(${(hue + 40) % 360} 40% 42%)"/>
-</linearGradient></defs>
-<rect width="400" height="300" fill="url(#g)"/>
-<circle cx="200" cy="128" r="52" fill="rgba(255,255,255,.42)"/>
-<path d="M200 180 L200 250 M200 205 Q168 190 152 205 M200 225 Q232 210 248 225" stroke="rgba(255,255,255,.75)" stroke-width="6" fill="none" stroke-linecap="round"/>
-<text x="200" y="278" font-family="Georgia,serif" font-size="17" font-style="italic" fill="#fff" text-anchor="middle">${taxon.sp}</text>
-<text x="200" y="26" font-family="system-ui,sans-serif" font-size="12" fill="rgba(255,255,255,.9)" text-anchor="middle">ÖRNEK GÖRSEL — GERÇEK FOTOĞRAF DEĞİL</text>
-</svg>`;
-  const url = `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
   return {
     id: `${taxon.sp.replace(/\s+/g, '-').toLowerCase()}-${index}`,
-    url,
-    thumbnailUrl: url,
+    url: '',
+    thumbnailUrl: '',
     width: 400,
     height: 300,
     caption: `${taxon.sp} — yer tutucu görsel`,

@@ -8,6 +8,7 @@ import {
 } from '@trbotanik/shared';
 import { buildAttributeGroups, type AttrValue } from '../domain/attributeSchema';
 import type { SelectionResult } from '../domain/filter';
+import { placeholderImageUrl } from './placeholderImage';
 import { useAppStore } from '../state/useAppStore';
 
 interface Props {
@@ -115,7 +116,7 @@ function SpeciesDetail({
           <h3 className="detail__group-title">{t('detail.groupImages')}</h3>
           <div className="gallery">
             {detail.images.map((image) => (
-              <ImageCard key={image.id} image={image} />
+              <ImageCard key={image.id} image={image} scientificName={node.name} />
             ))}
           </div>
         </div>
@@ -169,11 +170,16 @@ function AttributeValue({
   }
 }
 
-function ImageCard({ image }: { image: PlantImage }) {
+function ImageCard({ image, scientificName }: { image: PlantImage; scientificName: string }) {
   const { t } = useTranslation();
+  // Yer tutucu görseller veri setinde taşınmaz, burada üretilir (bkz. placeholderImage.ts)
+  const source = image.isPlaceholder
+    ? placeholderImageUrl(scientificName, imageIndex(image.id))
+    : image.thumbnailUrl;
+
   return (
     <figure className="gallery__item">
-      <img src={image.thumbnailUrl} alt={image.caption ?? ''} loading="lazy" />
+      <img src={source} alt={image.caption ?? ''} loading="lazy" />
       <figcaption>
         {/* Lisans ve fotoğrafçı bilgisi her görselin altında zorunludur */}
         {image.isPlaceholder
@@ -182,6 +188,11 @@ function ImageCard({ image }: { image: PlantImage }) {
       </figcaption>
     </figure>
   );
+}
+
+function imageIndex(id: string): number {
+  const parsed = Number(id.slice(id.lastIndexOf('-') + 1));
+  return Number.isFinite(parsed) ? parsed : 0;
 }
 
 /* ------------------------------------------------------------------ *
