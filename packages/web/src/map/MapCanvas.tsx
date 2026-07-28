@@ -137,10 +137,24 @@ export function MapCanvas({ dataset, selection }: Props) {
     fetch(url, { mode: 'cors', cache: 'no-store', signal: controller.signal })
       .then((response) => {
         if (probeGenerationRef.current !== generation) return; // eskimiş deneme
-        if (!response.ok) setBasemapTileError(true);
+        if (!response.ok) {
+          console.warn(
+            `[TRbotanik] "${def.id}" karo sunucusu HTTP ${response.status} döndü: ${url}`,
+          );
+          setBasemapTileError(true);
+        } else {
+          console.info(`[TRbotanik] "${def.id}" karo sunucusuna erişildi (HTTP ${response.status}): ${url}`);
+        }
       })
-      .catch(() => {
+      .catch((error: unknown) => {
         if (probeGenerationRef.current !== generation) return;
+        // Tarayıcı burada CORS engeli ile DNS/ağ hatasını aynı jenerik
+        // "Failed to fetch" TypeError'ıyla bildirir; ayırt etmenin tek yolu
+        // Ağ (Network) sekmesinde isteğin gerçekten gidip gitmediğine bakmaktır.
+        console.warn(
+          `[TRbotanik] "${def.id}" karo sunucusuna ulaşılamadı (CORS engeli veya ağ hatası olabilir): ${url}`,
+          error,
+        );
         setBasemapTileError(true);
       })
       .finally(() => clearTimeout(timeoutId));
