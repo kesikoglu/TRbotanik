@@ -8,7 +8,7 @@ import { DAVIS_CODES, davisSquareBounds, type DavisCode } from '@trbotanik/share
 import type { Dataset } from '../data/dataset';
 import { metricValue, type SelectionResult } from '../domain/filter';
 import { useAppStore } from '../state/useAppStore';
-import { getBasemap, type BasemapDefinition } from './basemaps';
+import { getBasemap, sampleTileUrl, type BasemapDefinition } from './basemaps';
 import { CHOROPLETH_RAMP, MAP_COLORS, NO_DATA_COLOR, TURKIYE_VIEW_BOUNDS } from './theme';
 
 const SRC_TURKIYE = 'turkiye';
@@ -65,6 +65,8 @@ export function MapCanvas({ dataset, selection }: Props) {
   const userMovedRef = useRef(false);
   /** Şu an takılı olan altlık tanımı — değişimde önce bunun katman/kaynakları sökülür */
   const currentBasemapRef = useRef<BasemapDefinition | null>(null);
+  /** Yarışan erişilebilirlik denemelerinde yalnızca en sonuncusunun sonucu sayılır */
+  const probeGenerationRef = useRef(0);
 
   const mapMode = useAppStore((s) => s.mapMode);
   const metric = useAppStore((s) => s.metric);
@@ -111,6 +113,37 @@ export function MapCanvas({ dataset, selection }: Props) {
 
     currentBasemapRef.current = def;
     setBasemapTileError(false);
+    checkBasemapReachability(def);
+  }
+
+  /**
+   * Karo sunucusuna bağımsız bir erişilebilirlik kontrolü.
+   *
+   * MapLibre'nin kendi olaylarına güvenilemediği için (yukarıdaki not) burada kendi
+   * `fetch()` isteğimizi yapıyoruz. `mode: 'cors'` kasıtlıdır: sunucu CORS başlığı
+   * göndermiyorsa bu istek de tıpkı MapLibre'nin WebGL doku yüklemesi gibi
+   * reddedilir — yani gerçekte haritada göreceğimiz sorunu burada da yakalarız.
+   * Kullanıcı hızlıca birden fazla altlık arasında geçiş yaparsa yalnızca en son
+   * denemenin sonucu sayılır (`probeGenerationRef`).
+   */
+  function checkBasemapReachability(def: BasemapDefinition) {
+    const url = sampleTileUrl(def);
+    if (!url) return; // çevrimdışı altlığın karo kaynağı yok, kontrol edilecek bir şey yok
+
+    const generation = ++probeGenerationRef.current;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+    fetch(url, { mode: 'cors', cache: 'no-store', signal: controller.signal })
+      .then((response) => {
+        if (probeGenerationRef.current !== generation) return; // eskimiş deneme
+        if (!response.ok) setBasemapTileError(true);
+      })
+      .catch(() => {
+        if (probeGenerationRef.current !== generation) return;
+        setBasemapTileError(true);
+      })
+      .finally(() => clearTimeout(timeoutId));
   }
 
   /* ── Harita kurulumu (bir kez) ──────────────────────────────────── */

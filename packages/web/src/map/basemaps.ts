@@ -138,6 +138,25 @@ export function getBasemap(id: string): BasemapDefinition {
 }
 
 /**
+ * Karo kaynağının erişilebilirliğini test etmek için örnek bir karo adresi üretir.
+ *
+ * Neden gerekli: MapLibre, tek tek karo yükleme hatalarını (CORS engeli, 404, ağ
+ * hatası vb.) sessizce yutar — WebGL doku olarak kullanılamayan bir karo yalnızca
+ * boş bırakılır, haritanın genel `'error'` olayı TETİKLENMEZ. Bu yüzden "karo
+ * yüklenemedi" durumunu MapLibre'nin kendi olaylarına güvenerek algılayamıyoruz;
+ * kendi bağımsız `fetch()` kontrolümüzü yapmamız gerekiyor (bkz. MapCanvas.tsx).
+ */
+export function sampleTileUrl(def: BasemapDefinition): string | null {
+  const raster = def.sources['basemap-raster'];
+  if (!raster || raster.type !== 'raster' || !('tiles' in raster) || !raster.tiles?.[0]) {
+    return null;
+  }
+  // z=0 her zaman geçerlidir (tüm dünyayı kapsayan tek karo) — sırf erişilebilirlik
+  // ve CORS başlıklarını sınamak için, gerçek görünümle ilgisi yoktur.
+  return raster.tiles[0].replace('{z}', '0').replace('{x}', '0').replace('{y}', '0');
+}
+
+/**
  * Arayüzde gösterilecek altlık listesi, sabit bir sırayla.
  *
  * Anahtar gerektiren altlıklar, anahtar tanımlı değilse listeden tamamen çıkarılır —
