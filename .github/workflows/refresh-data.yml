@@ -42,7 +42,8 @@ concurrency:
 jobs:
   refresh:
     runs-on: ubuntu-latest
-    timeout-minutes: 355
+    # 360 = GitHub barındırmalı runner'lar için izin verilen mutlak üst sınır.
+    timeout-minutes: 360
     steps:
       - name: Depoyu al
         uses: actions/checkout@v4
