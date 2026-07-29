@@ -1,0 +1,107 @@
+name: Gerçek veriyi GBIF ve iNaturalist'ten çek
+
+# Bu iş akışı yalnızca bu ortamdan (geliştirme konteyneri egress'i büyük ölçüde
+# engelliyor) DEĞİL, GitHub Actions runner'ından çalışır — gerçek internet
+# erişimiyle. GBIF'ten Türkiye'nin damarlı bitki taksonomisini ve yayılış
+# kayıtlarını, iNaturalist'ten lisanslı fotoğrafları çeker; sonucu
+# data/gbif-snapshot/ altında commit'ler. Bir sonraki normal dağıtım
+# (deploy-pages.yml, her push'ta çalışır) bu anlık görüntüyü örnek veri yerine
+# otomatik kullanır — bkz. scripts/select-dataset.mjs.
+#
+# Tüm Türkiye florası için tam çalıştırma SAATLER sürebilir (özellikle
+# iNaturalist adımı, nezaket sınırı nedeniyle). Bu yüzden:
+#   - Her adım kendi kontrol noktasını data/raw/gbif/ altına yazar (kesintiye
+#     dayanıklı) ve actions/cache ile çalıştırmalar arasında korunur.
+#   - `workflow_dispatch` ile manuel tetiklenirken `species_limit` girdisiyle
+#     küçük bir alt kümeyle hızlı bir doğrulama (duman testi) yapılabilir.
+on:
+  push:
+    branches:
+      - claude/turkiye-botanik-haritasi-di1550
+    paths:
+      - 'scripts/ingest/gbif-taxonomy.mjs'
+      - 'scripts/ingest/gbif-occurrences.mjs'
+      - 'scripts/ingest/inaturalist-images.mjs'
+      - 'scripts/ingest/build-real-dataset.mjs'
+      - 'scripts/ingest/lib/**'
+      - '.github/workflows/refresh-data.yml'
+  workflow_dispatch:
+    inputs:
+      species_limit:
+        description: 'Yalnızca en çok kayıtlı ilk N türü işle (boş = tüm flora)'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-data
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    steps:
+      - name: Depoyu al
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+
+      - name: Node.js kur
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Bağımlılıkları kur
+        run: npm ci
+
+      - name: Paylaşılan paketi derle
+        run: npm run build -w @trbotanik/shared
+
+      - name: Önceki ilerlemeyi geri yükle
+        uses: actions/cache/restore@v4
+        with:
+          path: data/raw/gbif
+          key: gbif-raw-${{ github.run_id }}
+          restore-keys: |
+            gbif-raw-
+
+      - name: Tür anahtarlarını keşfet ve tür kayıtlarını çek (GBIF)
+        run: npm run data:gbif-taxonomy
+        env:
+          # GEÇİCİ: ilk doğrulama (duman testi) çalıştırması için küçük bir üst
+          # sınır — pipeline uçtan uca çalıştığı görüldükten sonra bu satır
+          # `${{ github.event.inputs.species_limit }}` olarak geri alınıp tüm
+          # Türkiye florası için sınırsız çalıştırılacak.
+          GBIF_SPECIES_LIMIT: 150
+
+      - name: Yayılış kayıtlarını çek (GBIF)
+        run: npm run data:gbif-occurrences
+
+      - name: Lisanslı fotoğrafları ara (iNaturalist)
+        run: npm run data:gbif-images
+
+      - name: İlerlemeyi önbelleğe kaydet
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: data/raw/gbif
+          key: gbif-raw-${{ github.run_id }}
+
+      - name: Anlık görüntüyü üret
+        run: npm run data:gbif-build
+
+      - name: Anlık görüntüyü commit'le ve push'la
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/gbif-snapshot
+          if git diff --cached --quiet; then
+            echo "Değişiklik yok, commit atlanıyor."
+          else
+            git commit -m "data: GBIF/iNaturalist anlık görüntüsünü yenile"
+            git push origin HEAD:${{ github.ref_name }}
+          fi

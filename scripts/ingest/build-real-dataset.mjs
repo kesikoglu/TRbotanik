@@ -1,0 +1,393 @@
+#!/usr/bin/env node
+/**
+ * `gbif-taxonomy.mjs`, `gbif-occurrences.mjs` ve `inaturalist-images.mjs`'in
+ * ürettiği ham kontrol noktalarını (data/raw/gbif/*.json — gitignore'da) ve
+ * Nuh'un Gemisi küratörleme verisini (data/nuhungemisi/derived.json) birleştirip
+ * uygulamanın okuduğu tam şemada bir anlık görüntü üretir:
+ *
+ *   data/gbif-snapshot/{manifest,taxonomy,occurrences,details}.json
+ *
+ * Bu anlık görüntü — nuhungemisi'nin ham xlsx'i gibi — COMMIT EDİLİR. Neden:
+ * GBIF/iNaturalist'ten yeniden çekmek onlarca dakika ile saatler arası sürebilir
+ * (bkz. ingest scriptlerinin başlık yorumları) ve normal bir push'ta (ör. bir
+ * dokümantasyon düzeltmesi) bunu yeniden yapmak hem yavaş hem gereksizdir.
+ * `scripts/select-dataset.mjs` (data:all zincirinin son adımı) bu anlık görüntü
+ * varsa onu `packages/web/public/data/`'ya kopyalar; yoksa örnek (fixture)
+ * veriye döner. Böylece gerçek veri yalnızca BEN `refresh-data.yml` iş akışını
+ * (ingest scriptlerine dokunarak veya elle) tetiklediğimde yenilenir.
+ */
+import { existsSync } from 'node:fs';
+import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { buildTaxonomyNodes, indexByRank, rollUpCounts } from '@trbotanik/shared';
+import { speciesKey } from './nuhungemisiParse.mjs';
+
+const here = dirname(fileURLToPath(import.meta.url));
+const RAW_DIR = resolve(here, '../../data/raw/gbif');
+const SNAPSHOT_DIR = resolve(here, '../../data/gbif-snapshot');
+const NUHUNGEMISI_DERIVED = resolve(here, '../../data/nuhungemisi/derived.json');
+
+const IUCN_CODES = new Set(['EX', 'EW', 'CR', 'EN', 'VU', 'NT', 'LC', 'DD', 'NE']);
+
+function sourced(value, provenance) {
+  return { value, provenance };
+}
+
+const now = new Date().toISOString();
+const GBIF_SOURCE = {
+  source: 'gbif',
+  retrievedAt: now,
+  url: 'https://www.gbif.org',
+  citation: 'GBIF.org — Global Biodiversity Information Facility (hesapsız arama API\'si)',
+};
+const INAT_PROVENANCE = {
+  source: 'inaturalist',
+  retrievedAt: now,
+  citation: 'iNaturalist gözlem fotoğrafı',
+};
+
+async function main() {
+  const speciesFile = resolve(RAW_DIR, 'species.json');
+  if (!existsSync(speciesFile)) {
+    console.error('data/raw/gbif/species.json yok — önce `npm run data:gbif-taxonomy` çalıştırın.');
+    process.exit(1);
+  }
+  const species = JSON.parse(await readFile(speciesFile, 'utf8'));
+
+  const occurrencesFile = resolve(RAW_DIR, 'occurrences.json');
+  const rawOccurrencesByKey = existsSync(occurrencesFile)
+    ? JSON.parse(await readFile(occurrencesFile, 'utf8'))
+    : {};
+
+  const imagesFile = resolve(RAW_DIR, 'images.json');
+  const imagesByKey = existsSync(imagesFile) ? JSON.parse(await readFile(imagesFile, 'utf8')) : {};
+
+  let nuhungemisi = null;
+  if (existsSync(NUHUNGEMISI_DERIVED)) {
+    nuhungemisi = JSON.parse(await readFile(NUHUNGEMISI_DERIVED, 'utf8'));
+    console.log(`ℹ Nuh'un Gemisi verisi yüklendi: ${nuhungemisi.speciesCount} tür.`);
+  }
+  const officialLookup = (name) => (nuhungemisi ? nuhungemisi.species[speciesKey(name)] ?? null : null);
+
+  /* -------------------------------------------------------------- *
+   * Kabul edilen türleri grupla; eş anlamlıları ve gerçek toplam kayıt
+   * sayısını (facet'ten — örneklenen nokta sayısından FARKLI) birleştir.
+   * -------------------------------------------------------------- */
+  const accepted = new Map(); // gbifKey -> { entry, totalOccurrenceCount, synonyms: [] }
+  for (const entry of Object.values(species)) {
+    if (!entry.class || !entry.order || !entry.family || !entry.genus || !entry.canonicalName) {
+      continue; // sınıflandırması eksik kayıt — ağaca eklenemez, sessizce atlanmaz, sayılır
+    }
+    const key = entry.gbifKey;
+    let group = accepted.get(key);
+    if (!group) {
+      group = { entry: null, totalOccurrenceCount: 0, synonyms: [] };
+      accepted.set(key, group);
+    }
+    group.totalOccurrenceCount += entry.occurrenceCount ?? 0;
+    if (entry.taxonomicStatus === 'SYNONYM') {
+      if (entry.originalName) group.synonyms.push({ name: entry.originalName, authorship: null });
+    } else {
+      group.entry = entry;
+    }
+  }
+
+  let skippedNoClassification = 0;
+  let skippedNoAcceptedRecord = 0;
+  for (const [key, group] of [...accepted.entries()]) {
+    if (!group.entry) {
+      // Yalnızca eş anlamlı bulundu, kabul edilen kaydın kendisi eksik/eksik sınıflandırmalı.
+      accepted.delete(key);
+      skippedNoAcceptedRecord++;
+    }
+  }
+  for (const entry of Object.values(species)) {
+    if (entry.taxonomicStatus !== 'SYNONYM' && (!entry.class || !entry.order || !entry.family)) {
+      skippedNoClassification++;
+    }
+  }
+  if (skippedNoClassification || skippedNoAcceptedRecord) {
+    console.log(
+      `ℹ ${skippedNoClassification} tür eksik sınıflandırma, ${skippedNoAcceptedRecord} tür ` +
+        'yalnızca eş anlamlı kaydı olduğu için ağaca eklenmedi.',
+    );
+  }
+
+  /* -------------------------------------------------------------- *
+   * Taksonomi ağacı
+   * -------------------------------------------------------------- */
+  const raw = [];
+  const seen = new Set();
+  const addOnce = (key, entry) => {
+    if (seen.has(key)) return;
+    seen.add(key);
+    raw.push(entry);
+  };
+
+  for (const { entry } of accepted.values()) {
+    addOnce(`c:${entry.class}`, { key: `c:${entry.class}`, parentKey: null, rank: 'CLASS', name: entry.class });
+    addOnce(`o:${entry.order}`, { key: `o:${entry.order}`, parentKey: `c:${entry.class}`, rank: 'ORDER', name: entry.order });
+    addOnce(`f:${entry.family}`, { key: `f:${entry.family}`, parentKey: `o:${entry.order}`, rank: 'FAMILY', name: entry.family });
+    addOnce(`g:${entry.genus}`, { key: `g:${entry.genus}`, parentKey: `f:${entry.family}`, rank: 'GENUS', name: entry.genus });
+    addOnce(`s:${entry.canonicalName}`, {
+      key: `s:${entry.canonicalName}`,
+      parentKey: `g:${entry.genus}`,
+      rank: 'SPECIES',
+      name: entry.canonicalName,
+      authorship: entry.authorship,
+      gbifKey: entry.gbifKey,
+      vernacularTr: entry.vernacularTr?.[0],
+    });
+  }
+
+  const nodes = buildTaxonomyNodes(raw);
+  const idByName = new Map(nodes.map((n) => [n.name, n.id]));
+
+  /* -------------------------------------------------------------- *
+   * Yayılış kayıtları — örneklenmiş, gerçek koordinatlı
+   * -------------------------------------------------------------- */
+  const occurrences = [];
+  let droppedNoSquare = 0;
+  for (const [gbifKeyStr, rawList] of Object.entries(rawOccurrencesByKey)) {
+    const gbifKey = Number(gbifKeyStr);
+    const group = accepted.get(gbifKey);
+    if (!group) continue;
+    const taxonId = idByName.get(group.entry.canonicalName);
+    if (taxonId === undefined) continue;
+    for (const rec of rawList) {
+      if (!rec.davisSquare) {
+        droppedNoSquare++;
+        continue;
+      }
+      occurrences.push({
+        id: rec.id,
+        taxonId,
+        lat: rec.lat,
+        lon: rec.lon,
+        davisSquare: rec.davisSquare,
+        coordinateUncertaintyM: rec.coordinateUncertaintyM ?? 0,
+        year: rec.year,
+        province: rec.province,
+        elevationM: rec.elevationM,
+        basisOfRecord: rec.basisOfRecord,
+        source: 'gbif',
+        license: rec.license,
+      });
+    }
+  }
+  if (droppedNoSquare) {
+    console.log(`ℹ ${droppedNoSquare} kayıt Davis karesi dışında kaldığı için haritaya eklenmedi.`);
+  }
+
+  /* -------------------------------------------------------------- *
+   * Sayaçları ağaçta topla — GERÇEK toplam (facet) kullanılır, örneklenen
+   * nokta sayısı değil; böylece kenar çubuğu sayaçları doğru bilimsel toplamı
+   * gösterir.
+   * -------------------------------------------------------------- */
+  const perTaxon = new Map();
+  for (const group of accepted.values()) {
+    const taxonId = idByName.get(group.entry.canonicalName);
+    if (taxonId === undefined) continue;
+    const official = officialLookup(group.entry.canonicalName);
+    const isEndemic = official?.endemism === 'endemik' || official?.endemism === 'lokal-endemik';
+    perTaxon.set(taxonId, { occurrences: group.totalOccurrenceCount, isEndemic });
+  }
+  rollUpCounts(nodes, perTaxon);
+
+  /* -------------------------------------------------------------- *
+   * PlantDetail kayıtları
+   * -------------------------------------------------------------- */
+  const details = {};
+  let officialEndemismFilled = 0;
+  let officialIucnFilled = 0;
+  let withImages = 0;
+  const isPartialCoverage = Boolean(nuhungemisi && nuhungemisi.provincesCovered.length < 81);
+
+  const NUHUNGEMISI_SOURCE = {
+    source: 'nuhungemisi',
+    retrievedAt: nuhungemisi?.generatedAt ?? now,
+    url: 'https://nuhungemisi.tarimorman.gov.tr/public/istatistik',
+    citation:
+      "T.C. Tarım ve Orman Bakanlığı, Nuh'un Gemisi Ulusal Biyolojik Çeşitlilik Veritabanı" +
+      (isPartialCoverage ? ` (kısmi kapsam: ${nuhungemisi.provincesCovered.length}/81 il)` : ''),
+  };
+
+  for (const group of accepted.values()) {
+    const { entry } = group;
+    const taxonId = idByName.get(entry.canonicalName);
+    if (taxonId === undefined) continue;
+
+    const own = occurrences.filter((o) => o.taxonId === taxonId);
+    const observedSquares = [...new Set(own.map((o) => o.davisSquare))].sort();
+    const official = officialLookup(entry.canonicalName);
+
+    const lats = own.map((o) => o.lat);
+    const lons = own.map((o) => o.lon);
+    const years = own.map((o) => o.year).filter((y) => y !== null);
+    const elevations = own.map((o) => o.elevationM).filter((e) => e !== null);
+    const provinces = [...new Set(own.map((o) => o.province).filter(Boolean))];
+
+    let endemismField;
+    if (official && official.endemism !== null) {
+      officialEndemismFilled++;
+      const isEndemic = official.endemism === 'endemik' || official.endemism === 'lokal-endemik';
+      endemismField = sourced(
+        { isEndemicToTurkiye: isEndemic, ...(isEndemic ? { scope: official.endemism === 'lokal-endemik' ? 'yerel' : 'ulusal' } : {}) },
+        NUHUNGEMISI_SOURCE,
+      );
+    } else {
+      endemismField = sourced(
+        { isEndemicToTurkiye: false },
+        { source: 'inferred', retrievedAt: now, note: 'Resmi kaynakta bulunamadı; doğrulanmamış varsayım.' },
+      );
+    }
+
+    const iucnField =
+      official?.iucnCode && IUCN_CODES.has(official.iucnCode)
+        ? (officialIucnFilled++, sourced({ category: official.iucnCode, scope: 'ulusal' }, NUHUNGEMISI_SOURCE))
+        : sourced(null);
+
+    const images = (imagesByKey[String(entry.gbifKey)] ?? []).map((img) => ({
+      ...img,
+      // Ham kontrol noktası provenance taşımaz — burada ekleniyor
+    }));
+    if (images.length) withImages++;
+    else {
+      images.push({
+        id: `${entry.canonicalName.replace(/\s+/g, '-').toLowerCase()}-0`,
+        url: '',
+        thumbnailUrl: '',
+        width: 400,
+        height: 300,
+        caption: `${entry.canonicalName} — yer tutucu görsel`,
+        photographer: null,
+        license: 'CC0',
+        licenseUrl: null,
+        attributionText: 'Yer tutucu görsel — henüz gerçek fotoğraf bulunamadı',
+        source: 'placeholder',
+        sourceUrl: '',
+        isPlaceholder: true,
+      });
+    }
+
+    const missingReasons = {};
+    if (!official || official.endemism === null) missingReasons.endemism = 'henuz-kuratorlenmedi';
+    missingReasons.habit = 'henuz-kuratorlenmedi';
+    missingReasons.lifeForm = 'henuz-kuratorlenmedi';
+    missingReasons.habitat = 'henuz-kuratorlenmedi';
+    missingReasons.altitudeRange = 'henuz-kuratorlenmedi';
+    missingReasons.floweringPeriod = 'henuz-kuratorlenmedi';
+    missingReasons.fruitingPeriod = 'henuz-kuratorlenmedi';
+    missingReasons.substrate = 'henuz-kuratorlenmedi';
+    missingReasons.publishedIn = 'henuz-kuratorlenmedi';
+    missingReasons.davisSquares = 'henuz-kuratorlenmedi';
+    missingReasons.floristicElement = 'henuz-kuratorlenmedi';
+    if (!official?.iucnCode) missingReasons.iucn = 'henuz-kuratorlenmedi';
+    if (!official) missingReasons.officialProvinces = 'kaynakta-yok';
+
+    const trackedFields = ['habit', 'habitat', 'altitudeRange', 'floweringPeriod', 'endemism',
+      'iucn', 'floristicElement', 'davisSquares', 'substrate', 'fruitingPeriod', 'officialProvinces'];
+    const filled = trackedFields.filter((f) => !missingReasons[f]).length;
+
+    details[taxonId] = {
+      taxonId,
+      acceptedName: sourced(entry.canonicalName, GBIF_SOURCE),
+      authorship: sourced(entry.authorship, GBIF_SOURCE),
+      taxonomicStatus: sourced('ACCEPTED', GBIF_SOURCE),
+      synonyms: sourced(group.synonyms, GBIF_SOURCE),
+      publishedIn: sourced(null),
+      classification: sourced(
+        { class: entry.class, order: entry.order, family: entry.family, genus: entry.genus },
+        GBIF_SOURCE,
+      ),
+      vernacularTr: sourced((entry.vernacularTr ?? []).map((name) => ({ name })), GBIF_SOURCE),
+      vernacularEn: sourced(entry.vernacularEn ?? [], GBIF_SOURCE),
+      habit: sourced(null),
+      lifeForm: sourced(null),
+      habitat: sourced(null),
+      altitudeRange: sourced(null),
+      floweringPeriod: sourced(null),
+      fruitingPeriod: sourced(null),
+      substrate: sourced(null),
+      endemism: endemismField,
+      iucn: iucnField,
+      floristicElement: sourced([]),
+      davisSquares: sourced([]),
+      officialProvinces: official ? (sourced(official.provinces, NUHUNGEMISI_SOURCE)) : sourced([]),
+      observedDavisSquares: observedSquares,
+      distribution: {
+        // GERÇEK toplam kayıt sayısı (facet) — haritada ÇİZİLEN örneklenmiş nokta
+        // sayısından (own.length) kasıtlı olarak farklıdır, bkz. gbif-occurrences.mjs.
+        occurrenceCount: group.totalOccurrenceCount,
+        bbox: own.length
+          ? [Math.min(...lons), Math.min(...lats), Math.max(...lons), Math.max(...lats)]
+          : null,
+        centroid: own.length
+          ? [
+              Number((lons.reduce((a, b) => a + b, 0) / lons.length).toFixed(4)),
+              Number((lats.reduce((a, b) => a + b, 0) / lats.length).toFixed(4)),
+            ]
+          : null,
+        provinces,
+        firstRecordYear: years.length ? Math.min(...years) : null,
+        lastRecordYear: years.length ? Math.max(...years) : null,
+        elevationObserved: elevations.length
+          ? { minM: Math.min(...elevations), maxM: Math.max(...elevations) }
+          : null,
+      },
+      images,
+      identifiers: { gbifTaxonKey: entry.gbifKey },
+      references: [],
+      missingReasons,
+      dataCompleteness: Number((filled / trackedFields.length).toFixed(2)),
+    };
+  }
+
+  console.log(
+    `ℹ Nuh'un Gemisi ile dolduruldu: ${officialEndemismFilled} endemizm, ${officialIucnFilled} IUCN. ` +
+      `${withImages}/${accepted.size} türde en az bir gerçek fotoğraf var.`,
+  );
+
+  /* -------------------------------------------------------------- *
+   * Yazma
+   * -------------------------------------------------------------- */
+  const manifest = {
+    version: '1.0.0-gbif',
+    generatedAt: now,
+    mode: 'static',
+    taxonCount: accepted.size,
+    occurrenceCount: occurrences.length,
+    gbifDownloadDoi: null,
+    gbifRetrievedAt: now,
+    notice:
+      'Bu veri seti GBIF (Global Biodiversity Information Facility) hesapsız arama API\'sinden ' +
+      'çekilmiştir. Yayılış noktaları, her tür için GBIF\'teki gerçek toplam kayıt sayısından ' +
+      'örneklenmiş bir alt kümedir (bkz. distribution.occurrenceCount gerçek toplamı taşır). ' +
+      'Habitat, yaşam formu, yükselti, çiçeklenme dönemi gibi alanlar GBIF tarafından ' +
+      'sağlanmaz; bu alanlar "henüz küratörlenmedi" olarak işaretlenmiştir.',
+  };
+
+  const taxonomy = {
+    version: manifest.version,
+    generatedAt: now,
+    nodes,
+    byRank: indexByRank(nodes),
+    rootIds: nodes.filter((n) => n.parentId === null).map((n) => n.id),
+  };
+
+  await mkdir(SNAPSHOT_DIR, { recursive: true });
+  await writeFile(resolve(SNAPSHOT_DIR, 'taxonomy.json'), JSON.stringify(taxonomy));
+  await writeFile(resolve(SNAPSHOT_DIR, 'occurrences.json'), JSON.stringify(occurrences));
+  await writeFile(resolve(SNAPSHOT_DIR, 'details.json'), JSON.stringify(details));
+  await writeFile(resolve(SNAPSHOT_DIR, 'manifest.json'), JSON.stringify(manifest, null, 2));
+
+  console.log('✓ Gerçek veri anlık görüntüsü yazıldı: data/gbif-snapshot/');
+  console.log(`  ${nodes.length} düğüm (${accepted.size} tür, ${taxonomy.byRank.FAMILY.length} familya)`);
+  console.log(`  ${occurrences.length} örneklenmiş nokta`);
+}
+
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});
