@@ -65,9 +65,17 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: data/raw/gbif
-          key: gbif-raw-${{ github.run_id }}
+          # v2: ilk tam ölçekli çalıştırma (run 30431141095) saatler süren bir
+          # GBIF 429 fırtınasında iptal edildi ve o çalıştırmanın kontrol
+          # noktasında, başarısız türlerin "sıfır kayıt" olarak yanlış
+          # kalıcılaştığı bir hataya rastlandı (artık düzeltildi, bkz.
+          # gbif-occurrences.mjs). Önbellek anahtarı kasıtlı olarak
+          # değiştirildi ki o şüpheli veri asla geri yüklenmesin — temiz bir
+          # sayfa ile (yalnızca ~15 dk süren taksonomi adımı yeniden
+          # çalışacak) yeniden başlanıyor.
+          key: gbif-raw-v2-${{ github.run_id }}
           restore-keys: |
-            gbif-raw-
+            gbif-raw-v2-
 
       - name: Tür anahtarlarını keşfet ve tür kayıtlarını çek (GBIF)
         run: npm run data:gbif-taxonomy
@@ -87,7 +95,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: data/raw/gbif
-          key: gbif-raw-${{ github.run_id }}
+          key: gbif-raw-v2-${{ github.run_id }}
 
       - name: Anlık görüntüyü üret
         run: npm run data:gbif-build

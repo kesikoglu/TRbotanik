@@ -31,7 +31,10 @@ const SPECIES_FILE = resolve(RAW_DIR, 'species.json');
 
 const GBIF = 'https://api.gbif.org/v1';
 const TRACHEOPHYTA_KEY = 7707728; // GBIF backbone: Tracheophyta (damarlı bitkiler)
-const CONCURRENCY = 6;
+// Occurrences adımında (bkz. gbif-occurrences.mjs) GBIF saatler süren bir 429
+// fırtınasına girdi; bu adım kendi başına sorunsuz tamamlanmış olsa da, aynı
+// çalıştırma içinde toplam yükü azaltmak için ihtiyatlı biçimde düşürüldü.
+const CONCURRENCY = 4;
 const SPECIES_LIMIT = process.env['GBIF_SPECIES_LIMIT']
   ? Number(process.env['GBIF_SPECIES_LIMIT'])
   : null;

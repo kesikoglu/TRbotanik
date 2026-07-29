@@ -14,7 +14,15 @@ const DEFAULT_HEADERS = {
   Accept: 'application/json',
 };
 
-/** Üstel geri çekilmeli, zaman aşımlı JSON GET. 429/5xx yeniden denenir. */
+/**
+ * Üstel geri çekilmeli, zaman aşımlı JSON GET. 429/5xx yeniden denenir.
+ *
+ * Tam ölçekli ilk çalıştırmada (13.319 tür) GBIF, sürdürülen yüksek istek
+ * hacminden sonra saatlerce süren bir 429 fırtınasına girdi — sabit kısa geri
+ * çekilme (30 sn tavan) her denemede yeniden hemen istek atıp durumu
+ * kötüleştirdi. Sunucu `Retry-After` başlığı veriyorsa artık ona uyulur;
+ * vermiyorsa geri çekilme tavanı çok daha yüksek tutulur (dakikalarca).
+ */
 export async function fetchJsonRetry(url, { retries = 5, timeoutMs = 30000 } = {}) {
   let lastErr;
   for (let attempt = 0; attempt <= retries; attempt++) {
@@ -24,7 +32,12 @@ export async function fetchJsonRetry(url, { retries = 5, timeoutMs = 30000 } = {
       const res = await fetch(url, { headers: DEFAULT_HEADERS, signal: controller.signal });
       clearTimeout(timer);
       if (res.status === 429 || res.status >= 500) {
-        throw new Error(`HTTP ${res.status} (yeniden denenecek): ${url}`);
+        const retryAfterHeader = res.headers.get('retry-after');
+        const retryAfterS = retryAfterHeader ? Number(retryAfterHeader) : null;
+        const err = new Error(`HTTP ${res.status} (yeniden denenecek): ${url}`);
+        err.retryAfterMs = Number.isFinite(retryAfterS) ? retryAfterS * 1000 : null;
+        err.httpStatus = res.status;
+        throw err;
       }
       if (!res.ok) {
         throw new Error(`HTTP ${res.status}: ${url}`);
@@ -34,7 +47,8 @@ export async function fetchJsonRetry(url, { retries = 5, timeoutMs = 30000 } = {
       clearTimeout(timer);
       lastErr = err;
       if (attempt === retries) break;
-      const backoffMs = Math.min(30000, 500 * 2 ** attempt) + Math.random() * 300;
+      const backoffMs =
+        err.retryAfterMs ?? Math.min(120000, 2000 * 2 ** attempt) + Math.random() * 500;
       await new Promise((resolve) => setTimeout(resolve, backoffMs));
     }
   }

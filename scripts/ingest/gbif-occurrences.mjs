@@ -20,7 +20,7 @@ import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { davisSquareFor } from '@trbotanik/shared';
-import { fetchJsonRetry, mapWithConcurrency } from './lib/http.mjs';
+import { fetchJsonRetry, mapWithConcurrency, rateLimiter } from './lib/http.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const RAW_DIR = resolve(here, '../../data/raw/gbif');
@@ -28,10 +28,18 @@ const SPECIES_FILE = resolve(RAW_DIR, 'species.json');
 const OCCURRENCES_FILE = resolve(RAW_DIR, 'occurrences.json');
 
 const GBIF = 'https://api.gbif.org/v1';
-const CONCURRENCY = 6;
+// İlk tam ölçekli çalıştırmada (13.319 tür, concurrency=6, sınırsız hız) GBIF
+// birkaç saat sürdürülen yükten sonra 429 fırtınasına girdi. Concurrency
+// düşürüldü ve toplam hız ayrıca dakikada 240 istekle (4/sn) sınırlandı —
+// hem daha kibar hem de 429 tetiklenirse Retry-After'a uyan tek istekler
+// halinde ilerler, art arda başarısız isteklerle zaman kaybetmez.
+const CONCURRENCY = 3;
+const REQUESTS_PER_MINUTE = 240;
 const PER_SPECIES_LIMIT = Number(process.env['GBIF_OCCURRENCE_PER_SPECIES_LIMIT'] ?? 300);
+const wait = rateLimiter(REQUESTS_PER_MINUTE);
 
 async function fetchOccurrencesForKey(occurrenceKey, limit) {
+  await wait();
   const page = await fetchJsonRetry(
     `${GBIF}/occurrence/search?country=TR&speciesKey=${occurrenceKey}` +
       `&hasCoordinate=true&hasGeospatialIssue=false&limit=${Math.min(limit, 300)}`,
@@ -111,8 +119,14 @@ async function main() {
       }
       checkpoint[String(acceptedKey)] = [...seen.values()];
     } catch (err) {
-      console.warn(`  ⚠ tür ${acceptedKey} yayılış kaydı atlandı: ${err.message}`);
-      checkpoint[String(acceptedKey)] = [];
+      // ÖNEMLİ: burada checkpoint'e YAZILMAZ. Kontrol noktasına `[]` yazmak,
+      // "gerçekten sıfır kaydı var" ile "GBIF 429 nedeniyle çekilemedi"
+      // durumlarını ayırt edilemez hale getirirdi — ilk tam ölçekli
+      // çalıştırmada (13.319 tür) tam bunun yaşandığı ve saatlerce süren bir
+      // 429 fırtınasında başarısız türlerin sessizce "sıfır kayıt" olarak
+      // kalıcılaştığı görüldü. Anahtar kontrol noktasında yer almadığı sürece
+      // bir sonraki çalıştırmada otomatik olarak yeniden denenir.
+      console.warn(`  ⚠ tür ${acceptedKey} yayılış kaydı atlandı (yeniden denenecek): ${err.message}`);
     }
     processed++;
     if (processed % 200 === 0) {
