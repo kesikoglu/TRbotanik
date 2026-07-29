@@ -23,10 +23,57 @@ test('harita yüklenir ve 29 Davis karesi etiketiyle çizilir', async ({ page })
   await page.screenshot({ path: 'screenshots/01-genel-gorunum.png', fullPage: false });
 });
 
-test('örnek veri uyarı bandı görünür', async ({ page }) => {
+test('veri modu banner\'ı gerçek veri modunu doğru yansıtır', async ({ page, baseURL }) => {
+  // `data/gbif-snapshot/` commit edildiyse (bkz. scripts/select-dataset.mjs) build
+  // artık örnek (fixture) yerine gerçek veriyi kullanır — banner o zaman GÖRÜNMEMELİ.
+  // Test, hangi veri modunun aktif olduğuna bakılmaksızın doğru davranışı sınar.
+  const manifest = await page
+    .request.get(`${baseURL}/data/manifest.json`)
+    .then((res) => res.json());
+
   const banner = page.getByTestId('fixture-banner');
-  await expect(banner).toBeVisible();
-  await expect(banner).toContainText('Örnek veri');
+  if (manifest.mode === 'fixture') {
+    await expect(banner).toBeVisible();
+    await expect(banner).toContainText('Örnek veri');
+  } else {
+    await expect(banner).toHaveCount(0);
+  }
+});
+
+test('kenar çubuğu ağacı genişletilip daraltılsa da harita boyu sabit kalır', async ({ page }) => {
+  // Regresyon testi: `.app`'in üç satırlık grid'i (üst çubuk / uyarı bandı / gövde)
+  // uyarı bandı DOM'a hiç gelmediğinde (gerçek veri modu) gövdeyi yanlışlıkla
+  // içeriğe göre boyutlanan "auto" satıra düşürüyordu — ağaç her genişletildiğinde/
+  // daraltıldığında harita da onunla birlikte büyüyüp küçülüyordu (bkz. .app__body
+  // içindeki grid-row: 3 düzeltmesi, global.css).
+  // Yalnızca kök (sınıf) seviyesindeki oklara tıklanır — tüm satırları tek tek
+  // tıklamak veri seti büyüdükçe (gerçek GBIF verisi genişledikçe) yavaşlar ve
+  // gereksizdir; birkaç sınıfı katlamak/açmak zaten satır sayısını önemli
+  // ölçüde değiştirmeye yeter.
+  const mapPane = page.locator('.map-pane');
+  const initialBox = await mapPane.boundingBox();
+  expect(initialBox).not.toBeNull();
+
+  const classToggles = page.locator('.tree__row', { hasText: 'Sınıf' }).locator('.tree__toggle');
+  const classCount = await classToggles.count();
+  expect(classCount).toBeGreaterThan(0);
+  for (let i = 0; i < classCount; i++) {
+    await classToggles.nth(i).click();
+  }
+  await page.waitForTimeout(300);
+
+  const collapsedBox = await mapPane.boundingBox();
+  expect(collapsedBox).not.toBeNull();
+  expect(collapsedBox!.height).toBe(initialBox!.height);
+
+  for (let i = 0; i < classCount; i++) {
+    await classToggles.nth(i).click();
+  }
+  await page.waitForTimeout(300);
+
+  const reexpandedBox = await mapPane.boundingBox();
+  expect(reexpandedBox).not.toBeNull();
+  expect(reexpandedBox!.height).toBe(initialBox!.height);
 });
 
 test('familya seçimi choropleth ve sayaçları değiştirir', async ({ page }) => {

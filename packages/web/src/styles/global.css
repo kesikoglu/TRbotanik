@@ -59,6 +59,19 @@ button {
   display: grid;
   grid-template-columns: var(--sidebar-w) 1fr auto;
   min-height: 0;
+  /*
+   * `.app`'in üç satırlık ızgarası (üst çubuk / uyarı bandı / gövde) üçüncü
+   * satırı (1fr) gövdeye ayırmayı varsayar. Ama uyarı bandı yalnızca örnek
+   * (fixture) veri modunda render edilir (bkz. App.tsx) — gerçek veri
+   * modunda o satır hiç DOM'a gelmez ve CSS Grid'in örtük yerleştirmesi
+   * gövdeyi YANLIŞLIKLA ikinci (auto, içeriğe göre boyutlanan) satıra
+   * koyardı. Sonuç: kenar çubuğu ağacı her genişletildiğinde/daraltıldığında
+   * o "auto" satırın boyu değişir ve harita da onunla birlikte büyür/küçülür
+   * — üçüncü satır (asıl kalan alanı dolduracak 1fr) hiç kullanılmadan boş
+   * kalır. `grid-row: 3` gövdeyi kardeş sayısından bağımsız olarak her zaman
+   * doğru satıra sabitler.
+   */
+  grid-row: 3;
 }
 
 .app__body--detail-open {
