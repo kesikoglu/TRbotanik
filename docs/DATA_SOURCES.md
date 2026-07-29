@@ -79,8 +79,8 @@ ve açıklayıcı bir `User-Agent` gönderilmelidir.
 | **Kaynak** | `nuhungemisi.tarimorman.gov.tr/public/istatistik` (manuel portal dışa aktarımı) |
 | **Konum** | `data/nuhungemisi/*.xlsx` — bkz. o klasördeki README |
 | **Kritik kısıt** | **Koordinat içermez**, yalnızca il adı verir. Haritaya nokta/Davis karesi eklemez |
-| **Kapsam** | Şu an yalnızca I-II. Bölge Müdürlüğü (10 il, Trakya + Güney Marmara) — 81 ilin küçük bir alt kümesi |
-| **Lisans** | Belirsiz — resmi bir devlet dışa aktarımı, açık lisans beyanı bulunamadı. Yalnızca dahili küratörleme için kullanılıyor; üçüncü taraf paylaşımı öncesi Bakanlık ile teyit edilmeli |
+| **Kapsam** | **Tamamlandı — 81/81 il** (I–XV. Bölge Müdürlüğü'nün tamamı), 881.523 satır; 409.223'ü damarlı bitki, 11.949 benzersiz tür (34.692 "Endemik" + 1.073 "Lokal Endemik" kayıt) |
+| **Lisans** | Belirsiz — resmi bir devlet dışa aktarımı, açık lisans beyanı bulunamadı. Yalnızca dahili küratörleme için kullanılıyor; üçüncü taraf paylaşımı öncesi Bakanlık ile teyit edilmeli. Repo herkese açık olduğundan ham dosya da herkese açıktır (proje sahibinin bilgisi dahilinde kabul edilmiştir) |
 
 Bu kaynak GBIF'in hiç sağlamadığı iki alanı doldurur: **resmi Türkçe endemizm
 durumu** ve **resmi IUCN kategorisi**. `scripts/ingest/nuhungemisi.mjs` bu dosyaları
@@ -94,9 +94,10 @@ illerde kayıtlı olduğunu gösterir. Bu, Davis karesi ile **birebir eşleşmez
 birden fazla kareye yayılabilir) — bu yüzden haritaya değil yalnızca öznitelik
 tablosuna yansır.
 
-**Genişletme:** Portaldan yeni bölge/il dışa aktarımı `data/nuhungemisi/` altına
-`.xlsx` olarak eklenip `npm run data:nuhungemisi` çalıştırıldığında kapsam otomatik
-genişler; kod değişikliği gerekmez.
+**Güncelleme:** Portaldan yeni bir dışa aktarım gelirse mevcut `.xlsx` dosyasının
+üzerine yazılıp `npm run data:nuhungemisi` çalıştırılması yeterlidir; kod değişikliği
+gerekmez. Aynı anda örtüşen (aynı kayıtları tekrar eden) birden fazla dosya
+bırakılmamalıdır — bkz. `data/nuhungemisi/README.md`.
 
 ---
 
