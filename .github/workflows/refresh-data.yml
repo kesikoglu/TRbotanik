@@ -42,7 +42,7 @@ concurrency:
 jobs:
   refresh:
     runs-on: ubuntu-latest
-    timeout-minutes: 340
+    timeout-minutes: 355
     steps:
       - name: Depoyu al
         uses: actions/checkout@v4
@@ -72,11 +72,9 @@ jobs:
       - name: Tür anahtarlarını keşfet ve tür kayıtlarını çek (GBIF)
         run: npm run data:gbif-taxonomy
         env:
-          # GEÇİCİ: ilk doğrulama (duman testi) çalıştırması için küçük bir üst
-          # sınır — pipeline uçtan uca çalıştığı görüldükten sonra bu satır
-          # `${{ github.event.inputs.species_limit }}` olarak geri alınıp tüm
-          # Türkiye florası için sınırsız çalıştırılacak.
-          GBIF_SPECIES_LIMIT: 150
+          # Duman testi (150 tür, run 30430435091) uçtan uca başarıyla tamamlandı —
+          # sınır kaldırıldı. Boş değer = tüm Türkiye florası (13.319 tür keşfedildi).
+          GBIF_SPECIES_LIMIT: ${{ github.event.inputs.species_limit }}
 
       - name: Yayılış kayıtlarını çek (GBIF)
         run: npm run data:gbif-occurrences
