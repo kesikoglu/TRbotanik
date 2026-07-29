@@ -25,6 +25,7 @@
     "endemicOnly": "Yalnızca endemik",
     "withRecords": "Kayıtlı taksonlar",
     "clear": "Filtreleri temizle",
+    "backToAll": "◀ Tümünü göster · {{count}} takson",
     "activeSelection": "Seçim: {{name}}",
     "noResults": "Eşleşen takson bulunamadı.",
     "resultCount": "{{count}} takson"

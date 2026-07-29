@@ -222,6 +222,32 @@ button {
   border-style: dashed;
 }
 
+/**
+ * Bir taksonomi seçimi aktifken her zaman görünür "tümünü göster" düğmesi.
+ * Ağaçta derine inildiğinde üst taksona tekrar tıklamak seçimi genişletebilir
+ * (DFS aralık birleşmesi), ama bu görünmez bir davranış olduğu ve kullanıcı
+ * geri bildiriminde üç ana sınıfa dönüş yolunun bulunamadığı görüldüğü için
+ * kaydırma gerektirmeyen sabit alanda, göze çarpan tam genişlikte bir düğme
+ * olarak eklendi.
+ */
+.back-to-all {
+  display: block;
+  width: 100%;
+  margin-top: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--c-accent);
+  border: none;
+  border-radius: var(--r-md);
+  color: var(--c-accent-ink);
+  font-size: 12.5px;
+  font-weight: 650;
+  text-align: left;
+}
+
+.back-to-all:hover {
+  filter: brightness(1.08);
+}
+
 /* ── Taksonomi ağacı ──────────────────────────────────────────────── */
 
 .tree {

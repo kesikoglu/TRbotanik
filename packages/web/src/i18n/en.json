@@ -25,6 +25,7 @@
     "endemicOnly": "Endemic only",
     "withRecords": "With records",
     "clear": "Clear filters",
+    "backToAll": "◀ Show all · {{count}} taxa",
     "activeSelection": "Selected: {{name}}",
     "noResults": "No matching taxa.",
     "resultCount": "{{count}} taxa"

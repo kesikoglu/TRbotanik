@@ -102,6 +102,16 @@ export function TaxonomySidebar({ nodes, rootIds, endemicIds, selection }: Props
     filter.endemicOnly ||
     filter.withRecordsOnly;
 
+  /**
+   * Ağaçta bir üst taksonu (ör. sınıf) tekrar tıklamak seçimi genişletebilir
+   * (DFS aralık birleşmesi sayesinde), ama bu görünmez bir davranıştır ve
+   * kullanıcı üç ana başlığa (sınıflar) nasıl geri döneceğini bilemez —
+   * gerçek kullanıcı geri bildirimiyle doğrulandı. Bu yüzden bir taksonomi
+   * seçimi aktifken, kaydırma gerektirmeyen sabit bölgede her zaman görünür,
+   * tek tıkla "tümünü göster" düğmesi eklendi.
+   */
+  const totalSpeciesCount = rootIds.reduce((sum, id) => sum + (nodes[id]?.speciesCount ?? 0), 0);
+
   return (
     <aside className="sidebar" data-testid="sidebar">
       <div className="sidebar__section">
@@ -148,6 +158,16 @@ export function TaxonomySidebar({ nodes, rootIds, endemicIds, selection }: Props
         <p className="sidebar__heading">
           {t('filter.taxonomy')} · {t('filter.resultCount', { count: selection.totals.species })}
         </p>
+        {hasFilter && (
+          <button
+            type="button"
+            className="back-to-all"
+            onClick={clearFilter}
+            data-testid="back-to-all"
+          >
+            {t('filter.backToAll', { count: totalSpeciesCount })}
+          </button>
+        )}
       </div>
 
       <div className="sidebar__section sidebar__section--grow">
