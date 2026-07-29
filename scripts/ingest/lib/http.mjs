@@ -6,8 +6,11 @@
  * test edilebilir — bkz. .github/workflows/refresh-data.yml.
  */
 
+// NOT: Bu değer yalnızca ASCII karakter içermelidir — fetch() başlık değerleri
+// ByteString (Latin-1) olmak zorundadır; Türkçe karakter (ş, ç, ğ, ı, ö, ü)
+// içeren bir User-Agent burada "ByteString'e dönüştürülemez" hatasıyla patlar.
 const DEFAULT_HEADERS = {
-  'User-Agent': 'TRbotanik/0.1 (+https://github.com/kesikoglu/TRbotanik; akademik biyoçeşitlilik haritası)',
+  'User-Agent': 'TRbotanik/0.1 (+https://github.com/kesikoglu/TRbotanik; academic biodiversity map of Turkiye)',
   Accept: 'application/json',
 };
 
