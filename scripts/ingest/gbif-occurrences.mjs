@@ -33,7 +33,14 @@ const GBIF = 'https://api.gbif.org/v1';
 // düşürüldü ve toplam hız ayrıca dakikada 240 istekle (4/sn) sınırlandı —
 // hem daha kibar hem de 429 tetiklenirse Retry-After'a uyan tek istekler
 // halinde ilerler, art arda başarısız isteklerle zaman kaybetmez.
-const CONCURRENCY = 3;
+//
+// İkinci tam ölçekli çalıştırmada (run 30491030720) concurrency=3'te bile
+// son ~25 dakikada neredeyse her istek 429 aldı — kendi 240/dk sınırımızın
+// çok altında. Bu, GBIF'in GitHub Actions'ın paylaşılan runner IP havuzunu
+// (bizim trafiğimizden bağımsız olarak) zaten sınıra yakın tuttuğunu
+// düşündürüyor. Concurrency 2'ye düşürüldü — tükenen deneme sayısını (ve
+// dolayısıyla bir sonraki çalıştırmaya ertelenen tür sayısını) azaltmak için.
+const CONCURRENCY = 2;
 const REQUESTS_PER_MINUTE = 240;
 const PER_SPECIES_LIMIT = Number(process.env['GBIF_OCCURRENCE_PER_SPECIES_LIMIT'] ?? 300);
 const wait = rateLimiter(REQUESTS_PER_MINUTE);
