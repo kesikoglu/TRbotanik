@@ -80,7 +80,14 @@ async function fetchImagesFor(scientificName) {
     `${INAT}/observations?taxon_name=${encodeURIComponent(scientificName)}` +
     `&photos=true&photo_license=${ALLOWED_LICENSES}&quality_grade=research` +
     `&order_by=votes&order=desc&per_page=10`;
-  const data = await fetchJsonRetry(url);
+  // Fotoğraf kaybı düşük riskli (tür verisi değil, görsel eksik kalır) — bu
+  // yüzden GBIF çekimindeki kadar sabırlı (5 deneme × 30sn) davranmıyoruz.
+  // Tam ölçekli çalıştırmada (run 30513090228) iNaturalist sürdürülen yüksek
+  // hacimden sonra bir süre neredeyse her isteği reddetti; varsayılan
+  // retry/timeout ile bu, checkpoint'in 400 dk'ya kadar ilerlememesi anlamına
+  // gelebiliyordu (100 türlük bir blok × ~4 dk en kötü durum). Hızlı vazgeçip
+  // devam etmek, tüm zaman bütçesini birkaç kötü türe kaptırmaktan iyidir.
+  const data = await fetchJsonRetry(url, { retries: 2, timeoutMs: 15000 });
   return toPlantImages(data.results ?? []);
 }
 
@@ -125,7 +132,7 @@ async function main() {
       checkpoint[String(entry.gbifKey)] = [];
     }
     processed++;
-    if (processed % 100 === 0) {
+    if (processed % 20 === 0) {
       await writeFile(IMAGES_FILE, JSON.stringify(checkpoint));
       console.log(`  💾 ara kayıt: ${Object.keys(checkpoint).length} tür (${processed}/${pending.length}).`);
     }
