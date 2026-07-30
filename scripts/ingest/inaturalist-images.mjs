@@ -31,6 +31,13 @@ const INAT = 'https://api.inaturalist.org/v1';
 const IMAGES_PER_SPECIES = Number(process.env['INAT_IMAGES_PER_SPECIES'] ?? 3);
 const REQUESTS_PER_MINUTE = 50;
 const ALLOWED_LICENSES = 'cc0,cc-by,cc-by-sa,cc-by-nc,cc-by-nc-sa';
+// Tek tek istek retry/timeout'u (retries=2/15sn) sürdürülen bir 429 fırtınasını
+// sınırlamaz — art arda çok sayıda başarısızlık, iNaturalist'in geçici olarak
+// bizi tamamen engellediğinin işaretidir. Bu durumda hemen tekrar denemek
+// yerine bir süre tamamen durup nezaket sınırının geçmesini beklemek, zaman
+// bütçesini onlarca başarısız istekle harcamaktan daha verimlidir.
+const CONSECUTIVE_FAILURE_THRESHOLD = Number(process.env['INAT_FAILURE_THRESHOLD'] ?? 25);
+const CIRCUIT_BREAKER_PAUSE_MS = Number(process.env['INAT_CIRCUIT_BREAKER_PAUSE_MS'] ?? 10 * 60 * 1000);
 
 const LICENSE_MAP = {
   cc0: 'CC0',
@@ -122,14 +129,25 @@ async function main() {
 
   const wait = rateLimiter(REQUESTS_PER_MINUTE);
   let processed = 0;
+  let consecutiveFailures = 0;
   for (const entry of pending) {
     await wait();
     try {
       const images = await fetchImagesFor(entry.canonicalName);
       checkpoint[String(entry.gbifKey)] = images;
+      consecutiveFailures = 0;
     } catch (err) {
       console.warn(`  ⚠ ${entry.canonicalName} görsel araması atlandı: ${err.message}`);
       checkpoint[String(entry.gbifKey)] = [];
+      consecutiveFailures++;
+      if (consecutiveFailures >= CONSECUTIVE_FAILURE_THRESHOLD) {
+        await writeFile(IMAGES_FILE, JSON.stringify(checkpoint));
+        console.warn(
+          `  ⏸ ${consecutiveFailures} ardışık başarısızlık — iNaturalist'e ${Math.round(CIRCUIT_BREAKER_PAUSE_MS / 60000)} dk ara veriliyor.`
+        );
+        await new Promise((r) => setTimeout(r, CIRCUIT_BREAKER_PAUSE_MS));
+        consecutiveFailures = 0;
+      }
     }
     processed++;
     if (processed % 20 === 0) {
