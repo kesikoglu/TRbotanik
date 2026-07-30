@@ -97,6 +97,24 @@ async function discoverDownloadUrl() {
   for (const c of candidates) console.log(`  - "${c.text}" → ${c.href}`);
 
   if (candidates.length === 0) {
+    // Teşhis: sayfa muhtemelen istemci tarafında (JS) render ediliyor ya da
+    // dosya linki farklı bir desende — ham HTML'de "xlsx"/"download"/"crosswalk"
+    // geçen yerlerin çevresini CI log'una dökerek gerçek yapıyı görünür kılıyoruz.
+    console.log('ℹ Teşhis: ham HTML\'de anahtar kelime çevresi (en fazla 8 eşleşme):');
+    let dumped = 0;
+    for (const needle of ['xlsx', 'download', 'crosswalk']) {
+      const re = new RegExp(needle, 'gi');
+      let m;
+      while (dumped < 8 && (m = re.exec(html))) {
+        const start = Math.max(0, m.index - 120);
+        const end = Math.min(html.length, m.index + needle.length + 120);
+        console.log(`  [...${html.slice(start, end).replace(/\s+/g, ' ')}...]`);
+        dumped++;
+      }
+      if (dumped >= 8) break;
+    }
+    if (dumped === 0) console.log('  (hiçbir anahtar kelime bulunamadı — sayfa muhtemelen JS ile render ediliyor)');
+
     throw new Error(
       `Sayfada Excel (.xlsx/.xls) indirme linki bulunamadı — EEA sayfa yapısı değişmiş olabilir: ${SOURCE_FOLDER_URL}`,
     );
