@@ -80,11 +80,12 @@ async function main() {
   const EUNIS_SOURCE = {
     source: 'eunis',
     retrievedAt: eunis?.generatedAt ?? now,
-    url: 'https://eunis.eea.europa.eu/habitats.jsp',
+    url: 'https://doi.org/10.2909/bfe4c237-e378-4a83-ab21-b3807f96c2e2',
     citation:
-      "EEA (European Environment Agency) — EUNIS Habitat Classification, seviye 3 karakteristik tür " +
-      'listesi (EVA veritabanından türetilmiş). Kapsam Avrupa ağırlıklıdır; yalnızca bu listede adı ' +
-      'geçen türler kod alır.',
+      'EEA (European Environment Agency) — EUNIS terrestrial habitat classification review (tabular), ' +
+      'version 1, Nov. 2021. Seviye 3/4 karakteristik tür listesi (EVA veritabanından türetilmiş, ' +
+      'CC-BY 4.0). Kapsam Avrupa ağırlıklıdır; yalnızca bu listede adı geçen türler kod alır.',
+    license: 'CC-BY',
   };
 
   /* -------------------------------------------------------------- *

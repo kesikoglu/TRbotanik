@@ -111,11 +111,14 @@ tiplerinin (ör. "E1.2 — Perennial calcareous grassland and basic steppes")
 **Kapsam kasıtlı olarak dardır ve bunun bilinmesi önemlidir:** EUNIS'in tür
 bazında toplu bir API'si veya "bu tür şu habitatta yaşar" ilişkisini tüm
 Türkiye florası için veren bir kaynağı YOK. Var olan tek yapılandırılmış veri,
-EEA'nın 2021 revizyonunda her "seviye 3" habitat tipi için EVA (European
-Vegetation Archive) veritabanından türetilmiş, en fazla ~20 türle sınırlı bir
-"karakteristik tür" listesidir — yön habitat → tür'dür, tersi değil. Bu liste
-Avrupa ağırlıklıdır (çoğu tür Orta/Kuzey Avrupa'nın yaygın bitkileri); Türkiye
-florasının büyük kısmı, özellikle endemikler, bu listede hiç geçmez.
+EEA'nın *EUNIS terrestrial habitat classification review (tabular), version 1,
+Nov. 2021* dosyasında her seviye 3/4 habitat tipi için EVA (European Vegetation
+Archive) veritabanından türetilmiş, en fazla ~20 türle sınırlı üç ayrı sütunda
+(Diagnostic/Constant/Dominant species) verilen bir "karakteristik tür"
+listesidir — yön habitat → tür'dür, tersi değil. Bu liste Avrupa ağırlıklıdır
+(çoğu tür Orta/Kuzey Avrupa'nın yaygın bitkileri); Türkiye florasının **~13.030
+türünden yalnızca ~1.319'u (%10)** bu listede geçiyor, geri kalanı — özellikle
+endemikler — hiç geçmiyor.
 
 Bu yüzden: `scripts/ingest/eunis-habitats.mjs` yalnızca bu karakteristik tür
 listesinde adı GEÇEN türlere kod atar; geri kalanı diğer küratörlenmemiş
@@ -124,11 +127,18 @@ habitatta yaşamıyor" anlamına gelmez, yalnızca EUNIS'in bu türü kapsamadı
 anlamına gelir. Tam ve doğru bir habitat ataması için Flora of Turkey gibi
 kaynaklardan elle küratörleme gerekir (bkz. `habitat` alanı, aynı durum).
 
-**Teknik not:** EEA'nın indirme URL'i zaman zaman değişebildiği için script,
-dosya adını sabitlemek yerine klasör sayfasının HTML'ini çekip içindeki gerçek
-Excel indirme linkini regex ile bulur (DOM ayrıştırıcı kullanmadan). Bu adım
-`refresh-data.yml`'de `continue-on-error: true` ile çalışır — EEA tarafında bir
-yapı değişikliği olursa asıl GBIF/iNaturalist zincirini bloke etmez.
+**Teknik not — neden commit'li bir dosya, GBIF gibi otomatik indirme değil:**
+`sdi.eea.europa.eu`'daki gerçek indirme linkleri hem bu geliştirme ortamının ağ
+politikasınca (`eea.europa.eu`/`doi.org` tamamen engelli) hem de GitHub Actions
+runner'ından (gerçek internet erişimiyle) **403 Forbidden** ile sonuçlandı —
+dört farklı otomatik yaklaşım (Plone REST API varsayımı, HTML link ayrıştırma,
+content-type doğrulama, Referer başlığı) denendi, hiçbiri EEA'nın bot/IP
+korumasını aşamadı. Bu yüzden dosya tarayıcıdan manuel indirilip
+`data/eunis/*.xlsx` altına commit edildi (bkz. `data/eunis/README.md` —
+`data/nuhungemisi/` ile aynı desen) ve script artık ağ değil yalnızca bu yerel
+dosyayı okuyor. `refresh-data.yml`'de yine de `continue-on-error: true` ile
+çalışır — dosya/şema ileride bir sorun çıkarırsa asıl GBIF/iNaturalist
+zincirini bloke etmemesi için.
 
 ---
 
