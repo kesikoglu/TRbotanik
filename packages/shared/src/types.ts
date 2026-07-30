@@ -19,6 +19,7 @@ export type SourceId =
   | 'flora-of-turkey'
   | 'iucn'
   | 'nuhungemisi'
+  | 'eunis'
   | 'curated'
   | 'inferred'
   | 'fixture';
@@ -153,6 +154,22 @@ export type FloristicElement =
 
 export type IucnCategory = 'EX' | 'EW' | 'CR' | 'EN' | 'VU' | 'NT' | 'LC' | 'DD' | 'NE';
 
+/**
+ * EEA'nın EUNIS habitat sınıflandırmasında (eunis.eea.europa.eu) bu taksonun
+ * "karakteristik tür" olarak listelendiği bir habitat tipi. Kapsam kasıtlı
+ * olarak dar tutulur: yalnızca EEA'nın yayımladığı karakteristik tür
+ * listesinde adı GEÇEN taksonlar bir eşleşme alır (bkz. docs/DATA_SOURCES.md
+ * §4c) — sınıflandırmanın kendisi Avrupa ağırlıklıdır, bu yüzden Türkiye
+ * florasının büyük kısmı için eşleşme bulunmaz ve bu, "henüz küratörlenmedi"
+ * olarak dürüstçe işaretlenir.
+ */
+export interface EunisHabitatMatch {
+  /** Ör. "E1.2" (Perennial calcareous grassland and basic steppes) */
+  code: string;
+  /** EUNIS'in İngilizce habitat adı */
+  name: string;
+}
+
 export type Phenology = 'cicekli' | 'meyveli' | 'vejetatif' | 'tohumlu';
 
 export interface MonthRange {
@@ -218,6 +235,8 @@ export interface PlantDetail {
   habit: Sourced<Habit | null>;
   lifeForm: Sourced<LifeForm | null>;
   habitat: Sourced<string | null>;
+  /** EUNIS habitat tip kodları — bkz. EunisHabitatMatch */
+  eunisHabitats: Sourced<EunisHabitatMatch[]>;
   altitudeRange: Sourced<AltitudeRange | null>;
   floweringPeriod: Sourced<MonthRange | null>;
   fruitingPeriod: Sourced<MonthRange | null>;

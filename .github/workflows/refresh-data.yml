@@ -3,8 +3,10 @@ name: Gerçek veriyi GBIF ve iNaturalist'ten çek
 # Bu iş akışı yalnızca bu ortamdan (geliştirme konteyneri egress'i büyük ölçüde
 # engelliyor) DEĞİL, GitHub Actions runner'ından çalışır — gerçek internet
 # erişimiyle. GBIF'ten Türkiye'nin damarlı bitki taksonomisini ve yayılış
-# kayıtlarını, iNaturalist'ten lisanslı fotoğrafları çeker; sonucu
-# data/gbif-snapshot/ altında commit'ler. Bir sonraki normal dağıtım
+# kayıtlarını, iNaturalist'ten lisanslı fotoğrafları, EEA'nın EUNIS habitat
+# sınıflandırmasından (yalnızca eşleşen türler için, iyi-niyet enrichment)
+# habitat kodlarını çeker; sonucu data/gbif-snapshot/ altında commit'ler.
+# Bir sonraki normal dağıtım
 # (deploy-pages.yml, her push'ta çalışır) bu anlık görüntüyü örnek veri yerine
 # otomatik kullanır — bkz. scripts/select-dataset.mjs.
 #
@@ -22,6 +24,7 @@ on:
       - 'scripts/ingest/gbif-taxonomy.mjs'
       - 'scripts/ingest/gbif-occurrences.mjs'
       - 'scripts/ingest/inaturalist-images.mjs'
+      - 'scripts/ingest/eunis-habitats.mjs'
       - 'scripts/ingest/build-real-dataset.mjs'
       - 'scripts/ingest/lib/**'
       - '.github/workflows/refresh-data.yml'
@@ -97,6 +100,16 @@ jobs:
         with:
           path: data/raw/gbif
           key: gbif-raw-v2-${{ github.run_id }}
+
+      - name: EUNIS habitat kodlarını eşleştir
+        # EEA'nın Excel yapısı/URL'i bu ortamdan (egress engelli) hiç
+        # doğrulanamadı — bkz. scripts/ingest/eunis-habitats.mjs başlığı.
+        # `continue-on-error`: bu deneysel, iyi-niyet (best-effort) zenginleştirme
+        # adımıdır; EEA tarafında bir yapı değişikliği olursa asıl GBIF/iNaturalist
+        # zincirini ve yayını bloke etmemeli — build-real-dataset.mjs kontrol
+        # noktası eksikse sessizce atlar (tüm türler "henüz küratörlenmedi" kalır).
+        continue-on-error: true
+        run: npm run data:eunis-habitats
 
       - name: Anlık görüntüyü üret
         run: npm run data:gbif-build

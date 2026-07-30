@@ -291,6 +291,7 @@ for (const t of FIXTURE_TAXA) {
   missingReasons.davisSquares = 'henuz-kuratorlenmedi';
   missingReasons.floristicElement = 'henuz-kuratorlenmedi';
   if (!official) missingReasons.officialProvinces = 'kaynakta-yok';
+  missingReasons.eunisHabitats = 'henuz-kuratorlenmedi';
 
   const lats = own.map((o) => o.lat);
   const lons = own.map((o) => o.lon);
@@ -300,7 +301,7 @@ for (const t of FIXTURE_TAXA) {
   // Doldurulmuş öznitelik oranı — arayüzde "veri bütünlüğü" göstergesi
   const trackedFields = ['habit', 'habitat', 'altitudeRange', 'floweringPeriod',
     'endemism', 'iucn', 'floristicElement', 'davisSquares', 'substrate', 'fruitingPeriod',
-    'officialProvinces'];
+    'officialProvinces', 'eunisHabitats'];
   const filled = trackedFields.filter((f) => !missingReasons[f]).length;
 
   // Endemizm: kendi küratörümüzün belirlediği bir değer varsa (t.endemic !== null)
@@ -349,6 +350,7 @@ for (const t of FIXTURE_TAXA) {
     habit: sourced(t.habit ?? null),
     lifeForm: sourced(null),
     habitat: sourced(t.habitat ?? null),
+    eunisHabitats: sourced([]),
     altitudeRange: sourced(t.alt ? { minM: t.alt[0], maxM: t.alt[1] } : null),
     floweringPeriod: sourced(t.flw ? { startMonth: t.flw[0], endMonth: t.flw[1] } : null),
     fruitingPeriod: sourced(null),

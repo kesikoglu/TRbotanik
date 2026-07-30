@@ -101,6 +101,37 @@ bırakılmamalıdır — bkz. `data/nuhungemisi/README.md`.
 
 ---
 
+## 4c. EUNIS habitat tip kodları — European Environment Agency (EEA)
+
+`PlantDetail.eunisHabitats` alanı, bir taksonun [EUNIS habitat
+sınıflandırmasında](https://eunis.eea.europa.eu/habitats.jsp) hangi habitat
+tiplerinin (ör. "E1.2 — Perennial calcareous grassland and basic steppes")
+"karakteristik türü" olarak listelendiğini gösterir.
+
+**Kapsam kasıtlı olarak dardır ve bunun bilinmesi önemlidir:** EUNIS'in tür
+bazında toplu bir API'si veya "bu tür şu habitatta yaşar" ilişkisini tüm
+Türkiye florası için veren bir kaynağı YOK. Var olan tek yapılandırılmış veri,
+EEA'nın 2021 revizyonunda her "seviye 3" habitat tipi için EVA (European
+Vegetation Archive) veritabanından türetilmiş, en fazla ~20 türle sınırlı bir
+"karakteristik tür" listesidir — yön habitat → tür'dür, tersi değil. Bu liste
+Avrupa ağırlıklıdır (çoğu tür Orta/Kuzey Avrupa'nın yaygın bitkileri); Türkiye
+florasının büyük kısmı, özellikle endemikler, bu listede hiç geçmez.
+
+Bu yüzden: `scripts/ingest/eunis-habitats.mjs` yalnızca bu karakteristik tür
+listesinde adı GEÇEN türlere kod atar; geri kalanı diğer küratörlenmemiş
+alanlar gibi **"henüz küratörlenmedi"** olarak işaretlenir — bu, "bu tür hiçbir
+habitatta yaşamıyor" anlamına gelmez, yalnızca EUNIS'in bu türü kapsamadığı
+anlamına gelir. Tam ve doğru bir habitat ataması için Flora of Turkey gibi
+kaynaklardan elle küratörleme gerekir (bkz. `habitat` alanı, aynı durum).
+
+**Teknik not:** EEA'nın indirme URL'i zaman zaman değişebildiği için script,
+dosya adını sabitlemek yerine EEA'nın Plone tabanlı sitesinin REST API'sini
+(`Accept: application/json`) sorgulayıp güncel Excel dosyasını keşfeder. Bu adım
+`refresh-data.yml`'de `continue-on-error: true` ile çalışır — EEA tarafında bir
+yapı değişikliği olursa asıl GBIF/iNaturalist zincirini bloke etmez.
+
+---
+
 ## 5. Taksonomi ve tür bilgisi
 
 | Kaynak | Kullanım | Not |

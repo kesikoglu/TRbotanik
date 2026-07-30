@@ -97,6 +97,7 @@
     "habit": "Yaşam formu",
     "lifeForm": "Raunkiaer formu",
     "habitat": "Habitat",
+    "eunisHabitats": "EUNIS habitat kodları",
     "altitudeRange": "Yükselti aralığı",
     "floweringPeriod": "Çiçeklenme dönemi",
     "fruitingPeriod": "Meyvelenme dönemi",
@@ -165,7 +166,8 @@
     "curated": "Küratör",
     "inferred": "Türetilmiş",
     "fixture": "Örnek veri",
-    "nuhungemisi": "Nuh'un Gemisi"
+    "nuhungemisi": "Nuh'un Gemisi",
+    "eunis": "EUNIS (EEA)"
   },
   "image": {
     "placeholder": "Yer tutucu görsel — gerçek fotoğraf değildir",

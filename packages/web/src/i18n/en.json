@@ -97,6 +97,7 @@
     "habit": "Habit",
     "lifeForm": "Raunkiaer life form",
     "habitat": "Habitat",
+    "eunisHabitats": "EUNIS habitat codes",
     "altitudeRange": "Altitude range",
     "floweringPeriod": "Flowering period",
     "fruitingPeriod": "Fruiting period",
@@ -165,7 +166,8 @@
     "curated": "Curated",
     "inferred": "Inferred",
     "fixture": "Sample data",
-    "nuhungemisi": "Noah's Ark DB"
+    "nuhungemisi": "Noah's Ark DB",
+    "eunis": "EUNIS (EEA)"
   },
   "image": {
     "placeholder": "Placeholder image — not an actual photograph",

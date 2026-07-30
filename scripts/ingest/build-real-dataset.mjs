@@ -27,6 +27,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const RAW_DIR = resolve(here, '../../data/raw/gbif');
 const SNAPSHOT_DIR = resolve(here, '../../data/gbif-snapshot');
 const NUHUNGEMISI_DERIVED = resolve(here, '../../data/nuhungemisi/derived.json');
+const EUNIS_FILE = resolve(here, '../../data/raw/eunis/species-habitats.json');
 
 const IUCN_CODES = new Set(['EX', 'EW', 'CR', 'EN', 'VU', 'NT', 'LC', 'DD', 'NE']);
 
@@ -69,6 +70,22 @@ async function main() {
     console.log(`ℹ Nuh'un Gemisi verisi yüklendi: ${nuhungemisi.speciesCount} tür.`);
   }
   const officialLookup = (name) => (nuhungemisi ? nuhungemisi.species[speciesKey(name)] ?? null : null);
+
+  let eunis = null;
+  if (existsSync(EUNIS_FILE)) {
+    eunis = JSON.parse(await readFile(EUNIS_FILE, 'utf8'));
+    console.log(`ℹ EUNIS habitat verisi yüklendi: ${eunis.speciesCount} tür eşleşmesi.`);
+  }
+  const eunisLookup = (name) => (eunis ? eunis.species[speciesKey(name)] ?? null : null);
+  const EUNIS_SOURCE = {
+    source: 'eunis',
+    retrievedAt: eunis?.generatedAt ?? now,
+    url: 'https://eunis.eea.europa.eu/habitats.jsp',
+    citation:
+      "EEA (European Environment Agency) — EUNIS Habitat Classification, seviye 3 karakteristik tür " +
+      'listesi (EVA veritabanından türetilmiş). Kapsam Avrupa ağırlıklıdır; yalnızca bu listede adı ' +
+      'geçen türler kod alır.',
+  };
 
   /* -------------------------------------------------------------- *
    * Kabul edilen türleri grupla; eş anlamlıları ve gerçek toplam kayıt
@@ -202,6 +219,7 @@ async function main() {
   let officialEndemismFilled = 0;
   let officialIucnFilled = 0;
   let withImages = 0;
+  let withEunisHabitats = 0;
   const isPartialCoverage = Boolean(nuhungemisi && nuhungemisi.provincesCovered.length < 81);
 
   const NUHUNGEMISI_SOURCE = {
@@ -248,6 +266,11 @@ async function main() {
         ? (officialIucnFilled++, sourced({ category: official.iucnCode, scope: 'ulusal' }, NUHUNGEMISI_SOURCE))
         : sourced(null);
 
+    const eunisMatches = eunisLookup(entry.canonicalName);
+    const eunisHabitatsField = eunisMatches?.length
+      ? (withEunisHabitats++, sourced(eunisMatches, EUNIS_SOURCE))
+      : sourced([]);
+
     const images = (imagesByKey[String(entry.gbifKey)] ?? []).map((img) => ({
       ...img,
       // Ham kontrol noktası provenance taşımaz — burada ekleniyor
@@ -285,9 +308,11 @@ async function main() {
     missingReasons.floristicElement = 'henuz-kuratorlenmedi';
     if (!official?.iucnCode) missingReasons.iucn = 'henuz-kuratorlenmedi';
     if (!official) missingReasons.officialProvinces = 'kaynakta-yok';
+    if (!eunisMatches?.length) missingReasons.eunisHabitats = 'henuz-kuratorlenmedi';
 
     const trackedFields = ['habit', 'habitat', 'altitudeRange', 'floweringPeriod', 'endemism',
-      'iucn', 'floristicElement', 'davisSquares', 'substrate', 'fruitingPeriod', 'officialProvinces'];
+      'iucn', 'floristicElement', 'davisSquares', 'substrate', 'fruitingPeriod', 'officialProvinces',
+      'eunisHabitats'];
     const filled = trackedFields.filter((f) => !missingReasons[f]).length;
 
     details[taxonId] = {
@@ -306,6 +331,7 @@ async function main() {
       habit: sourced(null),
       lifeForm: sourced(null),
       habitat: sourced(null),
+      eunisHabitats: eunisHabitatsField,
       altitudeRange: sourced(null),
       floweringPeriod: sourced(null),
       fruitingPeriod: sourced(null),
@@ -346,7 +372,8 @@ async function main() {
 
   console.log(
     `ℹ Nuh'un Gemisi ile dolduruldu: ${officialEndemismFilled} endemizm, ${officialIucnFilled} IUCN. ` +
-      `${withImages}/${accepted.size} türde en az bir gerçek fotoğraf var.`,
+      `${withImages}/${accepted.size} türde en az bir gerçek fotoğraf var. ` +
+      `${withEunisHabitats}/${accepted.size} türde en az bir EUNIS habitat kodu var.`,
   );
 
   /* -------------------------------------------------------------- *
@@ -365,7 +392,9 @@ async function main() {
       'çekilmiştir. Yayılış noktaları, her tür için GBIF\'teki gerçek toplam kayıt sayısından ' +
       'örneklenmiş bir alt kümedir (bkz. distribution.occurrenceCount gerçek toplamı taşır). ' +
       'Habitat, yaşam formu, yükselti, çiçeklenme dönemi gibi alanlar GBIF tarafından ' +
-      'sağlanmaz; bu alanlar "henüz küratörlenmedi" olarak işaretlenmiştir.',
+      'sağlanmaz; bu alanlar "henüz küratörlenmedi" olarak işaretlenmiştir. EUNIS habitat kodları ' +
+      '(EEA) yalnızca EUNIS\'in karakteristik tür listesinde adı geçen türlerde bulunur — bu liste ' +
+      'Avrupa ağırlıklıdır, bu yüzden çoğu tür için de "henüz küratörlenmedi" görünür.',
   };
 
   const taxonomy = {

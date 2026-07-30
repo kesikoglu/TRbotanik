@@ -134,6 +134,10 @@ export function buildAttributeGroups(detail: PlantDetail, t: Translate): Attribu
         row(detail, 'habit', 'attr.habit', detail.habit, (h) => text(t(`habit.${h}`))),
         row(detail, 'lifeForm', 'attr.lifeForm', detail.lifeForm, (l) => text(String(l))),
         row(detail, 'habitat', 'attr.habitat', detail.habitat, text),
+        row(detail, 'eunisHabitats', 'attr.eunisHabitats', detail.eunisHabitats, (list) => ({
+          kind: 'list',
+          items: list.map((h) => `${h.code} — ${h.name}`),
+        })),
         row(detail, 'altitudeRange', 'attr.altitudeRange', detail.altitudeRange, (a) =>
           text(t('value.metersRange', { min: a.minM, max: a.maxM })),
         ),
