@@ -125,8 +125,8 @@ anlamına gelir. Tam ve doğru bir habitat ataması için Flora of Turkey gibi
 kaynaklardan elle küratörleme gerekir (bkz. `habitat` alanı, aynı durum).
 
 **Teknik not:** EEA'nın indirme URL'i zaman zaman değişebildiği için script,
-dosya adını sabitlemek yerine EEA'nın Plone tabanlı sitesinin REST API'sini
-(`Accept: application/json`) sorgulayıp güncel Excel dosyasını keşfeder. Bu adım
+dosya adını sabitlemek yerine klasör sayfasının HTML'ini çekip içindeki gerçek
+Excel indirme linkini regex ile bulur (DOM ayrıştırıcı kullanmadan). Bu adım
 `refresh-data.yml`'de `continue-on-error: true` ile çalışır — EEA tarafında bir
 yapı değişikliği olursa asıl GBIF/iNaturalist zincirini bloke etmez.
 

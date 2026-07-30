@@ -12,9 +12,12 @@
  * Avrupa ağırlıklı olması nedeniyle büyük çoğunluk) "henüz küratörlenmedi"
  * kalır — bkz. docs/DATA_SOURCES.md §4c.
  *
- * Dosyanın tam adı/URL'si EEA'nın Plone tabanlı sitesinde zaman zaman değişir;
- * bu yüzden sabit bir dosya adı yerine klasörün Plone REST API'sini
- * (Accept: application/json ile) sorgulayıp güncel indirme linkini keşfediyoruz.
+ * Dosyanın tam adı/URL'si EEA'nın sitesinde zaman zaman değişir; bu yüzden
+ * sabit bir dosya adı yerine klasör sayfasının HTML'ini çekip içindeki
+ * gerçek Excel indirme linkini (regex ile, DOM ayrıştırıcı olmadan) buluyoruz.
+ * (İlk denemede sayfanın bir Plone REST API'si sunduğunu varsaymıştık —
+ * `Accept: application/json` ile de düz HTML döndüğü görüldü, bkz. git
+ * geçmişi — bu yüzden HTML'in kendisini ayrıştırmaya geçildi.)
  *
  * ÇIKTI: data/raw/eunis/species-habitats.json (gitignore'da).
  *
@@ -71,34 +74,39 @@ async function fetchWithRetry(url, options = {}, { retries = 4 } = {}) {
   throw lastErr;
 }
 
-/** Plone klasör JSON'unda ("items") habitat crosswalk Excel'ini bulur. */
+/** Klasör sayfasının HTML'inde (DOM ayrıştırıcı olmadan, regex ile) Excel indirme linkini bulur. */
 async function discoverDownloadUrl() {
-  const res = await fetchWithRetry(SOURCE_FOLDER_URL, { headers: { Accept: 'application/json' } });
-  const contentType = res.headers.get('content-type') ?? '';
-  if (!contentType.includes('json')) {
-    throw new Error(
-      `Beklenmeyen içerik türü (${contentType}) — EEA klasör sayfası artık Plone REST API'si sunmuyor olabilir: ${SOURCE_FOLDER_URL}`,
-    );
+  const res = await fetchWithRetry(SOURCE_FOLDER_URL);
+  const html = await res.text();
+
+  // <a href="...">Bağlantı metni</a> — hem href'i hem de tercih sezgisi için
+  // (ör. "crosswalk" sözcüğü) bağlantı metnini birlikte yakala.
+  const anchorRe = /<a\b[^>]*\bhref="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi;
+  const candidates = [];
+  let match;
+  while ((match = anchorRe.exec(html))) {
+    const href = match[1];
+    const looksLikeExcelLink =
+      /\.xlsx?(?:[?#]|$)/i.test(href) || /\/(@@download|at_download)\//i.test(href);
+    if (!looksLikeExcelLink) continue;
+    const text = match[2].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+    candidates.push({ href, text });
   }
-  const folder = await res.json();
-  const items = folder.items ?? [];
-  console.log(`ℹ Klasörde ${items.length} öğe bulundu:`);
-  for (const item of items) console.log(`  - ${item.title ?? item['@id']}`);
 
-  const isExcel = (item) =>
-    (item.file?.['content-type'] ?? '').includes('spreadsheet') ||
-    /\.xlsx?$/i.test(item.file?.filename ?? item['@id'] ?? '');
+  console.log(`ℹ Sayfada (${html.length.toLocaleString('tr-TR')} karakter HTML) ${candidates.length} olası Excel linki bulundu:`);
+  for (const c of candidates) console.log(`  - "${c.text}" → ${c.href}`);
 
-  const candidates = items.filter(isExcel);
   if (candidates.length === 0) {
-    throw new Error('Klasörde Excel (.xlsx/.xls) öğesi bulunamadı — EEA sayfa yapısı değişmiş olabilir.');
+    throw new Error(
+      `Sayfada Excel (.xlsx/.xls) indirme linki bulunamadı — EEA sayfa yapısı değişmiş olabilir: ${SOURCE_FOLDER_URL}`,
+    );
   }
   // "crosswalk" (çapraz referans) sözcüğü geçeni tercih et — seviye 3 kodlarını
   // ve karakteristik tür listesini bir arada taşıyan dosya budur.
   const preferred =
-    candidates.find((item) => /crosswalk/i.test(item.title ?? '')) ?? candidates[0];
-  const downloadUrl = preferred.file?.download ?? `${preferred['@id']}/@@download/file`;
-  console.log(`✓ Seçilen dosya: "${preferred.title}" → ${downloadUrl}`);
+    candidates.find((c) => /crosswalk/i.test(c.text) || /crosswalk/i.test(c.href)) ?? candidates[0];
+  const downloadUrl = new URL(preferred.href, SOURCE_FOLDER_URL).toString();
+  console.log(`✓ Seçilen dosya: "${preferred.text || downloadUrl}" → ${downloadUrl}`);
   return downloadUrl;
 }
 
