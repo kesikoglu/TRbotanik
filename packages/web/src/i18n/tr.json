@@ -68,7 +68,19 @@
     "speciesInSquare": "{{count}} tür",
     "recordsInSquare": "{{count}} kayıt",
     "endemicInSquare": "{{count}} endemik",
-    "openDetail": "Ayrıntıyı aç"
+    "openDetail": "Ayrıntıyı aç",
+    "occurrenceTitle": "Yayılış kaydı",
+    "fieldProvince": "İl",
+    "fieldYear": "Yıl",
+    "fieldElevation": "Yükselti",
+    "fieldBasis": "Kayıt türü",
+    "fieldSource": "Kaynak"
+  },
+  "basisOfRecord": {
+    "PRESERVED_SPECIMEN": "Herbaryum örneği",
+    "HUMAN_OBSERVATION": "Gözlem",
+    "MATERIAL_SAMPLE": "Materyal örneği",
+    "OCCURRENCE": "Kayıt"
   },
   "detail": {
     "empty": "Haritadan bir kare veya listeden bir tür seçin.",

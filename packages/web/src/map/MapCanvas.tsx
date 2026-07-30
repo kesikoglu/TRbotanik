@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import maplibregl, {
   type Map as MapLibreMap,
   type PropertyValueSpecification,
@@ -10,6 +11,42 @@ import { metricValue, type SelectionResult } from '../domain/filter';
 import { useAppStore } from '../state/useAppStore';
 import { getBasemap, sampleTileUrl, type BasemapDefinition } from './basemaps';
 import { CHOROPLETH_RAMP, MAP_COLORS, NO_DATA_COLOR, TURKIYE_VIEW_BOUNDS } from './theme';
+
+const HTML_ESCAPE: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' };
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>"]/g, (ch) => HTML_ESCAPE[ch] ?? ch);
+}
+
+/** Bir yayılış noktasının (tür vurgusu katmanındaki pembe nokta) popup içeriğini üretir. */
+function occurrencePopupHtml(
+  props: Record<string, unknown>,
+  t: (key: string, options?: Record<string, unknown>) => string,
+): string {
+  const province = props['province'] as string | null | undefined;
+  const year = props['year'] as number | null | undefined;
+  const elevationM = props['elevationM'] as number | null | undefined;
+  const basisOfRecord = props['basisOfRecord'] as string | undefined;
+  const source = props['source'] as string | undefined;
+
+  const missing = t('value.missing');
+  const rows: Array<[string, string]> = [
+    [t('popup.fieldProvince'), province ? escapeHtml(province) : missing],
+    [t('popup.fieldYear'), year != null ? String(year) : missing],
+    [t('popup.fieldElevation'), elevationM != null ? `${elevationM} m` : missing],
+    [
+      t('popup.fieldBasis'),
+      basisOfRecord ? escapeHtml(t(`basisOfRecord.${basisOfRecord}`)) : missing,
+    ],
+    [t('popup.fieldSource'), t(source === 'community' ? 'legend.pointsCommunity' : 'legend.pointsGbif')],
+  ];
+
+  return (
+    `<p class="popup__title">${escapeHtml(t('popup.occurrenceTitle'))}</p>` +
+    rows
+      .map(([label, value]) => `<p class="popup__meta"><strong>${escapeHtml(label)}:</strong> ${value}</p>`)
+      .join('')
+  );
+}
 
 const SRC_TURKIYE = 'turkiye';
 const SRC_DAVIS = 'davis';
@@ -67,6 +104,8 @@ export function MapCanvas({ dataset, selection }: Props) {
   const currentBasemapRef = useRef<BasemapDefinition | null>(null);
   /** Yarışan erişilebilirlik denemelerinde yalnızca en sonuncusunun sonucu sayılır */
   const probeGenerationRef = useRef(0);
+  /** Tür vurgusu noktasına tıklanınca açılan tekil popup — yenisi eskisinin yerini alır */
+  const popupRef = useRef<maplibregl.Popup | null>(null);
 
   const mapMode = useAppStore((s) => s.mapMode);
   const metric = useAppStore((s) => s.metric);
@@ -76,6 +115,15 @@ export function MapCanvas({ dataset, selection }: Props) {
   const selectSpecies = useAppStore((s) => s.selectSpecies);
   const basemapId = useAppStore((s) => s.basemapId);
   const setBasemapTileError = useAppStore((s) => s.setBasemapTileError);
+
+  // 'load' geri çağrısı yalnızca BİR KEZ kurulur (bkz. aşağıdaki useEffect([])) — bu
+  // yüzden içindeki tıklama işleyicisi `t`'yi doğrudan yakalarsa dil değişiminde
+  // güncellenmez. Ref üzerinden en güncel çeviri fonksiyonuna erişiyoruz.
+  const { t } = useTranslation();
+  const tRef = useRef(t);
+  useEffect(() => {
+    tRef.current = t;
+  }, [t]);
 
   /**
    * Etkin altlığın karo kaynağını/katmanını takar.
@@ -374,15 +422,30 @@ export function MapCanvas({ dataset, selection }: Props) {
 
       map.on('click', L_DAVIS_FILL, (event) => {
         const code = event.features?.[0]?.properties?.['code'] as DavisCode | undefined;
-        if (code) {
-          selectSquare(code);
-          selectSpecies(null);
-        }
+        if (!code) return;
+        // Tür vurgusu (pembe nokta) her modda görünür ve bu dolgunun üzerinde durur;
+        // tam o noktaya tıklanmışsa kare seçimine/tür temizlemeye geçme — L_SPECIES_HL
+        // kendi işleyicisinde popup açacak, burada onu geçersiz kılmayalım.
+        const hitHighlight = map.queryRenderedFeatures(event.point, { layers: [L_SPECIES_HL] }).length > 0;
+        if (hitHighlight) return;
+        selectSquare(code);
+        selectSpecies(null);
       });
 
       map.on('click', L_POINTS, (event) => {
         const taxonId = event.features?.[0]?.properties?.['taxonId'];
         if (typeof taxonId === 'number') selectSpecies(taxonId);
+      });
+
+      map.on('click', L_SPECIES_HL, (event) => {
+        const feature = event.features?.[0];
+        if (!feature) return;
+        const coordinates = (feature.geometry as GeoJSON.Point).coordinates.slice() as [number, number];
+        popupRef.current?.remove();
+        popupRef.current = new maplibregl.Popup({ closeButton: true, closeOnClick: true, maxWidth: '240px' })
+          .setLngLat(coordinates)
+          .setHTML(occurrencePopupHtml(feature.properties ?? {}, tRef.current))
+          .addTo(map);
       });
 
       map.on('click', L_CLUSTERS, (event) => {
@@ -394,7 +457,7 @@ export function MapCanvas({ dataset, selection }: Props) {
         });
       });
 
-      for (const layer of [L_POINTS, L_CLUSTERS]) {
+      for (const layer of [L_POINTS, L_CLUSTERS, L_SPECIES_HL]) {
         map.on('mouseenter', layer, () => {
           map.getCanvas().style.cursor = 'pointer';
         });
@@ -471,6 +534,8 @@ export function MapCanvas({ dataset, selection }: Props) {
       observer.disconnect();
       for (const marker of labelMarkersRef.current) marker.remove();
       labelMarkersRef.current = [];
+      popupRef.current?.remove();
+      popupRef.current = null;
       readyRef.current = false;
       map.remove();
       mapRef.current = null;
@@ -605,6 +670,11 @@ export function MapCanvas({ dataset, selection }: Props) {
       const source = map.getSource(SRC_SPECIES) as maplibregl.GeoJSONSource | undefined;
       if (!source) return;
 
+      // Tür değişince eski türün noktasına ait açık popup varsa (artık haritada
+      // karşılığı olmayan bir noktaya bağlı) kapat.
+      popupRef.current?.remove();
+      popupRef.current = null;
+
       for (const code of previousSpeciesSquaresRef.current) {
         map.setFeatureState({ source: SRC_DAVIS, id: code }, { speciesMember: false });
       }
@@ -624,7 +694,14 @@ export function MapCanvas({ dataset, selection }: Props) {
         type: 'FeatureCollection',
         features: occurrences.map((occ) => ({
           type: 'Feature' as const,
-          properties: { id: occ.id },
+          properties: {
+            id: occ.id,
+            province: occ.province,
+            year: occ.year,
+            elevationM: occ.elevationM,
+            basisOfRecord: occ.basisOfRecord,
+            source: occ.source,
+          },
           geometry: { type: 'Point' as const, coordinates: [occ.lon, occ.lat] },
         })),
       });

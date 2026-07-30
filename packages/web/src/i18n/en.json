@@ -68,7 +68,19 @@
     "speciesInSquare": "{{count}} species",
     "recordsInSquare": "{{count}} records",
     "endemicInSquare": "{{count}} endemic",
-    "openDetail": "Open details"
+    "openDetail": "Open details",
+    "occurrenceTitle": "Occurrence record",
+    "fieldProvince": "Province",
+    "fieldYear": "Year",
+    "fieldElevation": "Elevation",
+    "fieldBasis": "Record type",
+    "fieldSource": "Source"
+  },
+  "basisOfRecord": {
+    "PRESERVED_SPECIMEN": "Herbarium specimen",
+    "HUMAN_OBSERVATION": "Observation",
+    "MATERIAL_SAMPLE": "Material sample",
+    "OCCURRENCE": "Occurrence"
   },
   "detail": {
     "empty": "Select a square on the map or a species from the list.",
