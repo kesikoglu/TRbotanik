@@ -13,11 +13,15 @@
  * kalır — bkz. docs/DATA_SOURCES.md §4c.
  *
  * Dosyanın tam adı/URL'si EEA'nın sitesinde zaman zaman değişir; bu yüzden
- * sabit bir dosya adı yerine klasör sayfasının HTML'ini çekip içindeki
- * gerçek Excel indirme linkini (regex ile, DOM ayrıştırıcı olmadan) buluyoruz.
- * (İlk denemede sayfanın bir Plone REST API'si sunduğunu varsaymıştık —
- * `Accept: application/json` ile de düz HTML döndüğü görüldü, bkz. git
- * geçmişi — bu yüzden HTML'in kendisini ayrıştırmaya geçildi.)
+ * sabit bir dosya adı yerine klasör sayfasının HTML'ini çekip içindeki gerçek
+ * indirme linklerini (regex ile, DOM ayrıştırıcı olmadan) buluyoruz. Sayfa bir
+ * veri kataloğu sonuç listesi: her dosya öğesinin kendi "Direct download"
+ * linki var ama href bir dosya uzantısı TAŞIMIYOR (ör.
+ * `https://sdi.eea.europa.eu/data/{uuid}` — bir çözücü/yönlendirme linki).
+ * Bu yüzden hangi linkin Excel olduğunu href'ten değil, adayları sırayla
+ * GERÇEKTEN indirip content-type'a bakarak buluyoruz — bkz. git geçmişi (iki
+ * önceki deneme: önce yanlışlıkla Plone REST API varsayıldı, sonra yalnızca
+ * `.xlsx`/`@@download` desenine bakıldı, ikisi de bu sayfada eşleşmedi).
  *
  * ÇIKTI: data/raw/eunis/species-habitats.json (gitignore'da).
  *
@@ -42,8 +46,9 @@ const USER_AGENT = 'TRbotanik/0.1 (+https://github.com/kesikoglu/TRbotanik; acad
 
 // EEA'nın 2021 revizyonu, seviye 3 habitatlarını EVA'dan türetilmiş
 // karakteristik tür listeleriyle tamamlıyor (bkz. bu script'in başlığı).
-// Klasörün kendisini hedefliyoruz — içindeki güncel Excel dosyasını Plone
-// REST API'siyle keşfediyoruz, dosya adını sabitlemiyoruz.
+// Klasör sayfasının kendisini hedefliyoruz — içindeki güncel Excel dosyasını
+// (findDownloadCandidates + discoverAndDownloadExcel ile) keşfediyoruz, dosya
+// adını sabitlemiyoruz.
 const SOURCE_FOLDER_URL =
   'https://www.eea.europa.eu/data-and-maps/data/eunis-habitat-classification-1/eunis-terrestrial-habitat-classification-review-2021';
 
@@ -74,58 +79,87 @@ async function fetchWithRetry(url, options = {}, { retries = 4 } = {}) {
   throw lastErr;
 }
 
-/** Klasör sayfasının HTML'inde (DOM ayrıştırıcı olmadan, regex ile) Excel indirme linkini bulur. */
-async function discoverDownloadUrl() {
-  const res = await fetchWithRetry(SOURCE_FOLDER_URL);
-  const html = await res.text();
-
-  // <a href="...">Bağlantı metni</a> — hem href'i hem de tercih sezgisi için
-  // (ör. "crosswalk" sözcüğü) bağlantı metnini birlikte yakala.
+/** Klasör sayfasının HTML'inde (DOM ayrıştırıcı olmadan, regex ile) indirme linki adaylarını bulur. */
+function findDownloadCandidates(html) {
+  // <a href="...">Bağlantı metni</a> — hem href'i hem de bağlantı metnini
+  // birlikte yakala (metin "Direct download" ise href bir dosya uzantısı
+  // taşımasa da aday sayılır — bkz. bu dosyanın başlığı).
   const anchorRe = /<a\b[^>]*\bhref="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi;
   const candidates = [];
   let match;
   while ((match = anchorRe.exec(html))) {
     const href = match[1];
-    const looksLikeExcelLink =
-      /\.xlsx?(?:[?#]|$)/i.test(href) || /\/(@@download|at_download)\//i.test(href);
-    if (!looksLikeExcelLink) continue;
     const text = match[2].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-    candidates.push({ href, text });
+    const looksRelevant =
+      /\.xlsx?(?:[?#]|$)/i.test(href) ||
+      /\/(@@download|at_download)\//i.test(href) ||
+      /direct download/i.test(text);
+    if (looksRelevant) candidates.push({ href, text });
   }
+  return candidates;
+}
 
-  console.log(`ℹ Sayfada (${html.length.toLocaleString('tr-TR')} karakter HTML) ${candidates.length} olası Excel linki bulundu:`);
+function dumpDiagnostics(html) {
+  console.log('ℹ Teşhis: ham HTML\'de anahtar kelime çevresi (en fazla 8 eşleşme):');
+  let dumped = 0;
+  for (const needle of ['xlsx', 'download', 'crosswalk']) {
+    const re = new RegExp(needle, 'gi');
+    let m;
+    while (dumped < 8 && (m = re.exec(html))) {
+      const start = Math.max(0, m.index - 120);
+      const end = Math.min(html.length, m.index + needle.length + 120);
+      console.log(`  [...${html.slice(start, end).replace(/\s+/g, ' ')}...]`);
+      dumped++;
+    }
+    if (dumped >= 8) break;
+  }
+  if (dumped === 0) console.log('  (hiçbir anahtar kelime bulunamadı — sayfa muhtemelen JS ile render ediliyor)');
+}
+
+/**
+ * Klasör sayfasını bulur, indirme linki adaylarını çıkarır ve HER BİRİNİ
+ * SIRAYLA GERÇEKTEN İNDİRİP content-type'a bakarak hangisinin Excel olduğunu
+ * belirler — adayların href'i dosya türünü göstermiyor (bkz. dosya başlığı).
+ */
+async function discoverAndDownloadExcel() {
+  const pageRes = await fetchWithRetry(SOURCE_FOLDER_URL);
+  const html = await pageRes.text();
+
+  const candidates = findDownloadCandidates(html);
+  console.log(`ℹ Sayfada (${html.length.toLocaleString('tr-TR')} karakter HTML) ${candidates.length} olası indirme linki bulundu:`);
   for (const c of candidates) console.log(`  - "${c.text}" → ${c.href}`);
 
   if (candidates.length === 0) {
-    // Teşhis: sayfa muhtemelen istemci tarafında (JS) render ediliyor ya da
-    // dosya linki farklı bir desende — ham HTML'de "xlsx"/"download"/"crosswalk"
-    // geçen yerlerin çevresini CI log'una dökerek gerçek yapıyı görünür kılıyoruz.
-    console.log('ℹ Teşhis: ham HTML\'de anahtar kelime çevresi (en fazla 8 eşleşme):');
-    let dumped = 0;
-    for (const needle of ['xlsx', 'download', 'crosswalk']) {
-      const re = new RegExp(needle, 'gi');
-      let m;
-      while (dumped < 8 && (m = re.exec(html))) {
-        const start = Math.max(0, m.index - 120);
-        const end = Math.min(html.length, m.index + needle.length + 120);
-        console.log(`  [...${html.slice(start, end).replace(/\s+/g, ' ')}...]`);
-        dumped++;
-      }
-      if (dumped >= 8) break;
-    }
-    if (dumped === 0) console.log('  (hiçbir anahtar kelime bulunamadı — sayfa muhtemelen JS ile render ediliyor)');
-
-    throw new Error(
-      `Sayfada Excel (.xlsx/.xls) indirme linki bulunamadı — EEA sayfa yapısı değişmiş olabilir: ${SOURCE_FOLDER_URL}`,
-    );
+    dumpDiagnostics(html);
+    throw new Error(`Sayfada indirme linki bulunamadı — EEA sayfa yapısı değişmiş olabilir: ${SOURCE_FOLDER_URL}`);
   }
-  // "crosswalk" (çapraz referans) sözcüğü geçeni tercih et — seviye 3 kodlarını
-  // ve karakteristik tür listesini bir arada taşıyan dosya budur.
-  const preferred =
-    candidates.find((c) => /crosswalk/i.test(c.text) || /crosswalk/i.test(c.href)) ?? candidates[0];
-  const downloadUrl = new URL(preferred.href, SOURCE_FOLDER_URL).toString();
-  console.log(`✓ Seçilen dosya: "${preferred.text || downloadUrl}" → ${downloadUrl}`);
-  return downloadUrl;
+
+  const attempts = [];
+  for (const c of candidates) {
+    const url = new URL(c.href, SOURCE_FOLDER_URL).toString();
+    let res;
+    try {
+      res = await fetchWithRetry(url, {}, { retries: 1 });
+    } catch (err) {
+      attempts.push(`"${c.text}" (${url}): indirilemedi — ${err.message}`);
+      continue;
+    }
+    const contentType = res.headers.get('content-type') ?? '';
+    const isExcel = /spreadsheet|ms-excel/i.test(contentType);
+    if (!isExcel) {
+      attempts.push(`"${c.text}" (${url}): Excel değil (content-type: ${contentType || 'bilinmiyor'})`);
+      continue;
+    }
+    const buffer = Buffer.from(await res.arrayBuffer());
+    console.log(
+      `✓ Seçilen dosya: "${c.text}" → ${url} (${contentType}, ${(buffer.length / 1024 / 1024).toFixed(1)} MB)`,
+    );
+    return { url, buffer };
+  }
+
+  console.log('ℹ Hiçbir aday Excel\'e çözülmedi:');
+  for (const a of attempts) console.log(`  - ${a}`);
+  throw new Error('Hiçbir aday link gerçek bir Excel dosyasına çözülmedi (content-type kontrolü başarısız).');
 }
 
 /** "Genus species (Author) subsp. epithet" gibi metinlerden düz binom çıkarır. */
@@ -214,10 +248,8 @@ async function parseWorkbook(buffer) {
 
 async function main() {
   console.log('EUNIS habitat crosswalk dosyası indiriliyor…');
-  const downloadUrl = await discoverDownloadUrl();
-  const res = await fetchWithRetry(downloadUrl);
-  const buffer = Buffer.from(await res.arrayBuffer());
-  console.log(`✓ ${(buffer.length / 1024 / 1024).toFixed(1)} MB indirildi, ayrıştırılıyor…`);
+  const { url: downloadUrl, buffer } = await discoverAndDownloadExcel();
+  console.log('Ayrıştırılıyor…');
 
   const parsed = await parseWorkbook(buffer);
   if (!parsed) {
