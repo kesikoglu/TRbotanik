@@ -139,7 +139,10 @@ async function discoverAndDownloadExcel() {
     const url = new URL(c.href, SOURCE_FOLDER_URL).toString();
     let res;
     try {
-      res = await fetchWithRetry(url, {}, { retries: 1 });
+      // Bir önceki deneme (run 30577831938) her iki adayda da HTTP 403 aldı —
+      // sdi.eea.europa.eu muhtemelen hotlink koruması için Referer istiyor;
+      // tarayıcıda linke tıklandığında bu otomatik gönderilir, fetch()'te değil.
+      res = await fetchWithRetry(url, { headers: { Referer: SOURCE_FOLDER_URL } }, { retries: 1 });
     } catch (err) {
       attempts.push(`"${c.text}" (${url}): indirilemedi — ${err.message}`);
       continue;
