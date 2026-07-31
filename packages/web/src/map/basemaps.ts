@@ -65,12 +65,24 @@ export const BASEMAPS: Record<string, BasemapDefinition> = {
     maxZoom: 14,
   },
 
-  /** Esri World Imagery — kullanım koşulları belirsiz, bilinçli tercih gerektirir. */
+  /**
+   * Esri World Imagery — kullanım koşulları belirsiz, bilinçli tercih gerektirir.
+   *
+   * İkinci bir karo katmanı (`basemap-labels`) Esri'nin "Reference / World Boundaries
+   * and Places" servisinden gelir — bu, doğrudan World Imagery'nin ÜZERİNE binmek
+   * üzere tasarlanmış şeffaf bir referans katmanıdır (il/ilçe/yerleşim adları,
+   * idari sınırlar). Kendi il/ilçe sınır verimizi üretmek yerine Esri'nin zaten
+   * bakımını yaptığı bu hazır katman kullanılıyor. `layers` dizisinde raster'dan
+   * SONRA gelir — MapCanvas.applyBasemap her katmanı sırayla L_LAND'in hemen
+   * altına eklediği için son eklenen üstte kalır, yani etiketler görüntünün üstünde
+   * görünür (bkz. applyBasemap).
+   */
   'esri-imagery': {
     id: 'esri-imagery',
     labelKey: 'map.basemapEsri',
     attributionHtml:
-      'Görüntü: Esri World Imagery — Esri, Maxar, Earthstar Geographics ve GIS kullanıcı topluluğu',
+      'Görüntü: Esri World Imagery — Esri, Maxar, Earthstar Geographics ve GIS kullanıcı topluluğu. ' +
+      'Yer adları: Esri World Boundaries and Places.',
     requiresKey: false,
     sources: {
       'basemap-raster': {
@@ -82,8 +94,20 @@ export const BASEMAPS: Record<string, BasemapDefinition> = {
         maxzoom: 18,
         attribution: 'Esri World Imagery',
       },
+      'basemap-labels': {
+        type: 'raster',
+        tiles: [
+          'https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
+        ],
+        tileSize: 256,
+        maxzoom: 18,
+        attribution: 'Esri World Boundaries and Places',
+      },
     },
-    layers: [{ id: 'basemap-raster', type: 'raster', source: 'basemap-raster' }],
+    layers: [
+      { id: 'basemap-raster', type: 'raster', source: 'basemap-raster' },
+      { id: 'basemap-labels', type: 'raster', source: 'basemap-labels' },
+    ],
     drawLandFill: false,
     maxZoom: 18,
   },

@@ -53,6 +53,7 @@ const SRC_DAVIS = 'davis';
 const SRC_POINTS = 'points';
 const SRC_SPECIES = 'species-highlight';
 const SRC_BASEMAP_RASTER = 'basemap-raster';
+const SRC_BASEMAP_LABELS = 'basemap-labels';
 
 const L_LAND = 'turkiye-land';
 const L_LAND_LINE = 'turkiye-outline';
@@ -473,7 +474,9 @@ export function MapCanvas({ dataset, selection }: Props) {
        */
       map.on('error', (event) => {
         const sourceId = (event as unknown as { sourceId?: string }).sourceId;
-        if (sourceId === SRC_BASEMAP_RASTER) setBasemapTileError(true);
+        if (sourceId === SRC_BASEMAP_RASTER || sourceId === SRC_BASEMAP_LABELS) {
+          setBasemapTileError(true);
+        }
       });
 
       /* Kare etiketleri — HTML işaretçisi, glyph gerekmez */
