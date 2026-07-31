@@ -195,6 +195,25 @@
     "next": "Sonraki görsel",
     "countOf": "{{current}}/{{total}}"
   },
+  "provinceTable": {
+    "title": "{{province}} bitkileri",
+    "subtitle": "{{count}} takson",
+    "empty": "Bu ilde kayıtlı takson bulunamadı.",
+    "close": "Kapat",
+    "exportExcel": "Excel'e aktar",
+    "exporting": "Hazırlanıyor…",
+    "colImage": "Görsel",
+    "colName": "Bilimsel ad",
+    "colVernacular": "Türkçe ad",
+    "colFamily": "Familya",
+    "colHabit": "Yaşam formu",
+    "colEndemic": "Endemik",
+    "colIucn": "IUCN",
+    "colFlowering": "Çiçeklenme",
+    "colRecords": "{{province}} kayıt sayısı",
+    "colImageLink": "Görsel bağlantısı",
+    "openImage": "Fotoğrafı aç"
+  },
   "lang": {
     "switch": "Language",
     "tr": "Türkçe",

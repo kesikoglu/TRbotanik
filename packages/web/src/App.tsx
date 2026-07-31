@@ -10,6 +10,7 @@ import { BasemapSwitcher } from './map/BasemapSwitcher';
 import { AttributionBar } from './map/AttributionBar';
 import { TaxonomySidebar } from './features/TaxonomySidebar';
 import { DetailPane } from './features/DetailPane';
+import { ProvinceTable } from './features/ProvinceTable';
 import { setLanguage, SUPPORTED_LANGUAGES, type Language } from './i18n';
 import type { Dataset } from './data/dataset';
 
@@ -46,6 +47,7 @@ function Workspace({ dataset }: { dataset: Dataset }) {
   const filter = useAppStore((s) => s.filter);
   const selectedSpeciesId = useAppStore((s) => s.selectedSpeciesId);
   const selectedSquare = useAppStore((s) => s.selectedSquare);
+  const provinceTableOpen = useAppStore((s) => s.provinceTableOpen);
 
   const endemicIds = useMemo(() => buildEndemicSet(dataset.details), [dataset.details]);
 
@@ -144,6 +146,16 @@ function Workspace({ dataset }: { dataset: Dataset }) {
           />
         )}
       </div>
+
+      {provinceTableOpen && filter.province && (
+        <ProvinceTable
+          province={filter.province}
+          nodes={dataset.nodes}
+          details={dataset.details}
+          endemicIds={endemicIds}
+          selection={selection}
+        />
+      )}
     </div>
   );
 }

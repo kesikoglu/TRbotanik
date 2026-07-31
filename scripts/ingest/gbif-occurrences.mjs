@@ -19,7 +19,7 @@ import { existsSync } from 'node:fs';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { davisSquareFor } from '@trbotanik/shared';
+import { davisSquareFor, normalizeProvinceName } from '@trbotanik/shared';
 import { fetchJsonRetry, mapWithConcurrency, rateLimiter } from './lib/http.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -66,7 +66,10 @@ function toRawRecord(rec) {
     davisSquare: square,
     coordinateUncertaintyM: rec.coordinateUncertaintyInMeters ?? null,
     year: rec.year ?? null,
-    province: rec.stateProvince ?? null,
+    // GBIF `stateProvince` denetimsiz serbest metindir (lokalite açıklamaları, eski
+    // adlar, aksansız yazımlar dahil); yalnızca 81 kanonik ilden birine çözülüyorsa
+    // saklanır, aksi hâlde `null` — "22 km north of Van" gibi bir değer il adı sanılmaz.
+    province: normalizeProvinceName(rec.stateProvince),
     elevationM: typeof rec.elevation === 'number' ? Math.round(rec.elevation) : null,
     basisOfRecord: rec.basisOfRecord ?? 'OCCURRENCE',
     license: normalizeLicense(rec.license),

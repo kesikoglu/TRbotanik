@@ -27,6 +27,8 @@ interface AppState {
   basemapId: string;
   /** Etkin altlığın karoları yüklenemedi mi — kullanıcıya sessizce boş harita gösterilmez */
   basemapTileError: boolean;
+  /** İl seçilince açılan takson tablosu görünür mü */
+  provinceTableOpen: boolean;
 
   setQuery: (query: string) => void;
   toggleTaxon: (id: number) => void;
@@ -34,6 +36,8 @@ interface AppState {
   toggleEndemicOnly: () => void;
   toggleWithRecordsOnly: () => void;
   setProvince: (province: string | null) => void;
+  openProvinceTable: () => void;
+  closeProvinceTable: () => void;
   setMapMode: (mode: MapMode) => void;
   setMetric: (metric: ChoroplethMetric) => void;
   selectSpecies: (id: number | null) => void;
@@ -53,6 +57,7 @@ export const useAppStore = create<AppState>((set) => ({
   expandedNodes: new Set<number>(),
   basemapId: initialBasemapId(),
   basemapTileError: false,
+  provinceTableOpen: false,
 
   setQuery: (query) => set((state) => ({ filter: { ...state.filter, query } })),
 
@@ -64,7 +69,7 @@ export const useAppStore = create<AppState>((set) => ({
       return { filter: { ...state.filter, selectedTaxonIds: [...selected] } };
     }),
 
-  clearFilter: () => set({ filter: EMPTY_FILTER, selectedSquare: null }),
+  clearFilter: () => set({ filter: EMPTY_FILTER, selectedSquare: null, provinceTableOpen: false }),
 
   toggleEndemicOnly: () =>
     set((state) => ({ filter: { ...state.filter, endemicOnly: !state.filter.endemicOnly } })),
@@ -74,7 +79,14 @@ export const useAppStore = create<AppState>((set) => ({
       filter: { ...state.filter, withRecordsOnly: !state.filter.withRecordsOnly },
     })),
 
-  setProvince: (province) => set((state) => ({ filter: { ...state.filter, province } })),
+  setProvince: (province) =>
+    set((state) => ({
+      filter: { ...state.filter, province },
+      // İl seçilince tablo kendiliğinden açılır; temizlenince kapanır.
+      provinceTableOpen: province !== null,
+    })),
+  openProvinceTable: () => set({ provinceTableOpen: true }),
+  closeProvinceTable: () => set({ provinceTableOpen: false }),
 
   setMapMode: (mapMode) => set({ mapMode }),
   setMetric: (metric) => set({ metric }),

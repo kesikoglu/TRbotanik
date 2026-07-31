@@ -195,6 +195,25 @@
     "next": "Next image",
     "countOf": "{{current}}/{{total}}"
   },
+  "provinceTable": {
+    "title": "Plants of {{province}}",
+    "subtitle": "{{count}} taxa",
+    "empty": "No taxa recorded in this province.",
+    "close": "Close",
+    "exportExcel": "Export to Excel",
+    "exporting": "Preparing…",
+    "colImage": "Image",
+    "colName": "Scientific name",
+    "colVernacular": "Turkish name",
+    "colFamily": "Family",
+    "colHabit": "Habit",
+    "colEndemic": "Endemic",
+    "colIucn": "IUCN",
+    "colFlowering": "Flowering",
+    "colRecords": "Records in {{province}}",
+    "colImageLink": "Image link",
+    "openImage": "Open photo"
+  },
   "lang": {
     "switch": "Dil",
     "tr": "Türkçe",
