@@ -603,6 +603,23 @@ button {
   background: var(--c-surface-3);
 }
 
+.popup__action {
+  margin-top: var(--sp-2);
+  padding: 4px var(--sp-2);
+  background: var(--c-accent);
+  border-radius: var(--r-sm);
+  color: var(--c-accent-ink);
+  font-family: inherit;
+  font-style: normal;
+  font-size: 12px;
+  font-weight: 650;
+  text-align: center;
+}
+
+.popup__action:hover {
+  filter: brightness(1.08);
+}
+
 /* ── Detay paneli ─────────────────────────────────────────────────── */
 
 .detail {

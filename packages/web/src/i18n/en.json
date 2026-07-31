@@ -76,7 +76,10 @@
     "fieldYear": "Year",
     "fieldElevation": "Elevation",
     "fieldBasis": "Record type",
-    "fieldSource": "Source"
+    "fieldSource": "Source",
+    "clusterTitle": "Record cluster",
+    "clusterCount": "{{count}} records grouped in this area",
+    "clusterHint": "Click again to zoom in and see individual records"
   },
   "basisOfRecord": {
     "PRESERVED_SPECIMEN": "Herbarium specimen",

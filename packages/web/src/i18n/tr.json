@@ -76,7 +76,10 @@
     "fieldYear": "Yıl",
     "fieldElevation": "Yükselti",
     "fieldBasis": "Kayıt türü",
-    "fieldSource": "Kaynak"
+    "fieldSource": "Kaynak",
+    "clusterTitle": "Kayıt kümesi",
+    "clusterCount": "{{count}} kayıt bu bölgede gruplandı",
+    "clusterHint": "Tekil kayıtları görmek için tekrar tıklayıp yakınlaşın"
   },
   "basisOfRecord": {
     "PRESERVED_SPECIMEN": "Herbaryum örneği",

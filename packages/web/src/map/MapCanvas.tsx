@@ -17,10 +17,13 @@ function escapeHtml(value: string): string {
   return value.replace(/[&<>"]/g, (ch) => HTML_ESCAPE[ch] ?? ch);
 }
 
-/** Bir yayılış noktasının (tür vurgusu katmanındaki pembe nokta) popup içeriğini üretir. */
+const OPEN_DETAIL_ATTR = 'data-open-detail';
+
+/** Bir yayılış noktasının popup içeriğini üretir. */
 function occurrencePopupHtml(
   props: Record<string, unknown>,
   t: (key: string, options?: Record<string, unknown>) => string,
+  { showOpenDetail = false }: { showOpenDetail?: boolean } = {},
 ): string {
   const species = props['species'] as string | null | undefined;
   const vernacular = props['vernacular'] as string | null | undefined;
@@ -49,11 +52,29 @@ function occurrencePopupHtml(
       (vernacular ? `<p class="popup__meta">${escapeHtml(vernacular)}</p>` : '')
     : `<p class="popup__title">${escapeHtml(t('popup.occurrenceTitle'))}</p>`;
 
+  const openDetailButton =
+    showOpenDetail && species
+      ? `<button type="button" class="popup__item popup__action" ${OPEN_DETAIL_ATTR}="1">${escapeHtml(t('popup.openDetail'))}</button>`
+      : '';
+
   return (
     heading +
     rows
       .map(([label, value]) => `<p class="popup__meta"><strong>${escapeHtml(label)}:</strong> ${value}</p>`)
-      .join('')
+      .join('') +
+    openDetailButton
+  );
+}
+
+/** Bir küme (yeşil daire) noktasının popup içeriğini üretir. */
+function clusterPopupHtml(
+  count: number,
+  t: (key: string, options?: Record<string, unknown>) => string,
+): string {
+  return (
+    `<p class="popup__title">${escapeHtml(t('popup.clusterTitle'))}</p>` +
+    `<p class="popup__meta">${escapeHtml(t('popup.clusterCount', { count }))}</p>` +
+    `<p class="popup__meta">${escapeHtml(t('popup.clusterHint'))}</p>`
   );
 }
 
@@ -443,8 +464,30 @@ export function MapCanvas({ dataset, selection }: Props) {
       });
 
       map.on('click', L_POINTS, (event) => {
-        const taxonId = event.features?.[0]?.properties?.['taxonId'];
-        if (typeof taxonId === 'number') selectSpecies(taxonId);
+        const feature = event.features?.[0];
+        if (!feature) return;
+        // Tür otomatik SEÇİLMEZ (önceki davranış "haritanın aniden uzaklaşması" gibi
+        // algılanıyordu, bkz. kullanıcı geri bildirimi) — yalnızca bu kaydın bilgisi
+        // popup'ta gösterilir; tam tür sayfasına geçmek isteyen "Ayrıntıyı aç"a basar.
+        // NOT: selectSpecies burada çağrılırsa "Seçili tür vurgusu" effect'i (aşağıda)
+        // selectedSpeciesId değiştiği an bu popup'ı hemen kapatır — bkz. o effect'teki
+        // "eski türün popup'ını kapat" mantığı.
+        const taxonId = feature.properties?.['taxonId'];
+        const coordinates = (feature.geometry as GeoJSON.Point).coordinates.slice() as [number, number];
+
+        popupRef.current?.remove();
+        const popup = new maplibregl.Popup({ closeButton: true, closeOnClick: true, maxWidth: '240px' })
+          .setLngLat(coordinates)
+          .setHTML(occurrencePopupHtml(feature.properties ?? {}, tRef.current, { showOpenDetail: true }))
+          .addTo(map);
+        popupRef.current = popup;
+
+        if (typeof taxonId === 'number') {
+          popup
+            .getElement()
+            .querySelector(`[${OPEN_DETAIL_ATTR}]`)
+            ?.addEventListener('click', () => selectSpecies(taxonId));
+        }
       });
 
       map.on('click', L_SPECIES_HL, (event) => {
@@ -461,8 +504,17 @@ export function MapCanvas({ dataset, selection }: Props) {
       map.on('click', L_CLUSTERS, (event) => {
         const feature = event.features?.[0];
         if (!feature) return;
+        const coordinates = (feature.geometry as GeoJSON.Point).coordinates as [number, number];
+        const count = Number(feature.properties?.['point_count'] ?? 0);
+
+        popupRef.current?.remove();
+        popupRef.current = new maplibregl.Popup({ closeButton: true, closeOnClick: true, maxWidth: '220px' })
+          .setLngLat(coordinates)
+          .setHTML(clusterPopupHtml(count, tRef.current))
+          .addTo(map);
+
         map.easeTo({
-          center: (feature.geometry as GeoJSON.Point).coordinates as [number, number],
+          center: coordinates,
           zoom: Math.min(map.getZoom() + 2, currentBasemapRef.current?.maxZoom ?? 12),
         });
       });
@@ -607,21 +659,31 @@ export function MapCanvas({ dataset, selection }: Props) {
       if (!source) return;
       source.setData({
         type: 'FeatureCollection',
-        features: selection.occurrences.map((occ) => ({
-          type: 'Feature' as const,
-          properties: {
-            id: occ.id,
-            taxonId: occ.taxonId,
-            src: occ.source === 'community' ? 'community' : 'gbif',
-          },
-          geometry: { type: 'Point' as const, coordinates: [occ.lon, occ.lat] },
-        })),
+        features: selection.occurrences.map((occ) => {
+          const node = dataset.nodes[occ.taxonId];
+          return {
+            type: 'Feature' as const,
+            properties: {
+              id: occ.id,
+              taxonId: occ.taxonId,
+              src: occ.source === 'community' ? 'community' : 'gbif',
+              species: node?.name ?? null,
+              vernacular: node?.vernacularTr ?? null,
+              province: occ.province,
+              year: occ.year,
+              elevationM: occ.elevationM,
+              basisOfRecord: occ.basisOfRecord,
+              source: occ.source,
+            },
+            geometry: { type: 'Point' as const, coordinates: [occ.lon, occ.lat] },
+          };
+        }),
       });
     };
 
     if (readyRef.current) update();
     else map.once('trbotanik.ready', update);
-  }, [selection]);
+  }, [selection, dataset.nodes]);
 
   /* ── Mod değişimi: katmanları yeniden kurmadan görünürlük değiştir ── */
   useEffect(() => {
