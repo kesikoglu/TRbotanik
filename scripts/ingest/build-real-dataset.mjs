@@ -20,7 +20,7 @@ import { existsSync } from 'node:fs';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { buildTaxonomyNodes, indexByRank, rollUpCounts } from '@trbotanik/shared';
+import { buildTaxonomyNodes, indexByRank, normalizeProvinceName, rollUpCounts } from '@trbotanik/shared';
 import { speciesKey } from './nuhungemisiParse.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -186,7 +186,12 @@ async function main() {
         davisSquare: rec.davisSquare,
         coordinateUncertaintyM: rec.coordinateUncertaintyM ?? 0,
         year: rec.year,
-        province: rec.province,
+        // gbif-occurrences.mjs de aynı normalizasyonu uygular, ama önbelleğe
+        // alınmış (checkpoint'lenmiş) eski ham kayıtlar bu adımı hiç görmeden
+        // buraya ulaşabilir (bkz. actions/cache restore-keys) — bu yüzden
+        // burada da tekrar uygulanır; zaten normalize edilmiş bir değer için
+        // no-op'tur.
+        province: normalizeProvinceName(rec.province),
         elevationM: rec.elevationM,
         basisOfRecord: rec.basisOfRecord,
         source: 'gbif',
