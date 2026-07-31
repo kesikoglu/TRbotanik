@@ -744,6 +744,21 @@ export function MapCanvas({ dataset, selection }: Props) {
       const source = map.getSource(SRC_SPECIES) as maplibregl.GeoJSONSource | undefined;
       if (!source) return;
 
+      // Bir tür seçiliyken aktif filtrenin TÜM kayıtlarını gösteren genel kümeler/
+      // nokta/ısı katmanı soluklaştırılır — aksi hâlde binlerce alakasız kayıt
+      // arasında türe özel pembe vurgu (aşağıda) fark edilmiyordu (bkz. kullanıcı
+      // geri bildirimi: "bu daireler Acorus calamus ile ne ilişkisi var?").
+      const hasSelection = selectedSpeciesId !== null;
+      if (map.getLayer(L_CLUSTERS)) {
+        map.setPaintProperty(L_CLUSTERS, 'circle-opacity', hasSelection ? 0.12 : 0.72);
+      }
+      if (map.getLayer(L_POINTS)) {
+        map.setPaintProperty(L_POINTS, 'circle-opacity', hasSelection ? 0.18 : 0.85);
+      }
+      if (map.getLayer(L_HEATMAP)) {
+        map.setPaintProperty(L_HEATMAP, 'heatmap-opacity', hasSelection ? 0.25 : 0.8);
+      }
+
       // Tür değişince eski türün noktasına ait açık popup varsa (artık haritada
       // karşılığı olmayan bir noktaya bağlı) kapat.
       popupRef.current?.remove();
@@ -754,7 +769,7 @@ export function MapCanvas({ dataset, selection }: Props) {
       }
       previousSpeciesSquaresRef.current = new Set();
 
-      if (selectedSpeciesId === null) {
+      if (!hasSelection) {
         source.setData({ type: 'FeatureCollection', features: [] });
         return;
       }
