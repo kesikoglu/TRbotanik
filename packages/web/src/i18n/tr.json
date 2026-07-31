@@ -189,7 +189,11 @@
   "image": {
     "placeholder": "Yer tutucu görsel — gerçek fotoğraf değildir",
     "photographer": "Fotoğraf",
-    "license": "Lisans"
+    "license": "Lisans",
+    "open": "Büyüt",
+    "prev": "Önceki görsel",
+    "next": "Sonraki görsel",
+    "countOf": "{{current}}/{{total}}"
   },
   "lang": {
     "switch": "Language",

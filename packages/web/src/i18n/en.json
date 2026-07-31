@@ -189,7 +189,11 @@
   "image": {
     "placeholder": "Placeholder image — not an actual photograph",
     "photographer": "Photo",
-    "license": "License"
+    "license": "License",
+    "open": "Enlarge",
+    "prev": "Previous image",
+    "next": "Next image",
+    "countOf": "{{current}}/{{total}}"
   },
   "lang": {
     "switch": "Dil",

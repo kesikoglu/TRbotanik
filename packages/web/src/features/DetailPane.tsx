@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   DAVIS_SQUARE_PROVINCES,
@@ -53,6 +54,7 @@ function SpeciesDetail({
   const { t } = useTranslation();
   const selectSpecies = useAppStore((s) => s.selectSpecies);
   const selectSquare = useAppStore((s) => s.selectSquare);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   const groups = buildAttributeGroups(detail, t as never);
   const vernacular = detail.vernacularTr.value.map((v) => v.name).join(', ');
@@ -115,12 +117,27 @@ function SpeciesDetail({
         <div className="detail__group">
           <h3 className="detail__group-title">{t('detail.groupImages')}</h3>
           <div className="gallery">
-            {detail.images.map((image) => (
-              <ImageCard key={image.id} image={image} scientificName={node.name} />
+            {detail.images.map((image, index) => (
+              <ImageCard
+                key={image.id}
+                image={image}
+                scientificName={node.name}
+                onOpen={() => setLightboxIndex(index)}
+              />
             ))}
           </div>
         </div>
       </div>
+
+      {lightboxIndex !== null && (
+        <ImageLightbox
+          images={detail.images}
+          index={lightboxIndex}
+          scientificName={node.name}
+          onClose={() => setLightboxIndex(null)}
+          onNavigate={setLightboxIndex}
+        />
+      )}
     </section>
   );
 }
@@ -170,7 +187,15 @@ function AttributeValue({
   }
 }
 
-function ImageCard({ image, scientificName }: { image: PlantImage; scientificName: string }) {
+function ImageCard({
+  image,
+  scientificName,
+  onOpen,
+}: {
+  image: PlantImage;
+  scientificName: string;
+  onOpen: () => void;
+}) {
   const { t } = useTranslation();
   // Yer tutucu görseller veri setinde taşınmaz, burada üretilir (bkz. placeholderImage.ts)
   const source = image.isPlaceholder
@@ -179,7 +204,9 @@ function ImageCard({ image, scientificName }: { image: PlantImage; scientificNam
 
   return (
     <figure className="gallery__item">
-      <img src={source} alt={image.caption ?? ''} loading="lazy" />
+      <button type="button" className="gallery__item-button" onClick={onOpen} aria-label={t('image.open')}>
+        <img src={source} alt={image.caption ?? ''} loading="lazy" />
+      </button>
       <figcaption>
         {/* Lisans ve fotoğrafçı bilgisi her görselin altında zorunludur */}
         {image.isPlaceholder
@@ -193,6 +220,105 @@ function ImageCard({ image, scientificName }: { image: PlantImage; scientificNam
 function imageIndex(id: string): number {
   const parsed = Number(id.slice(id.lastIndexOf('-') + 1));
   return Number.isFinite(parsed) ? parsed : 0;
+}
+
+/**
+ * Görsel galerisi büyüteci — bir görsele tıklanınca açılır, ok tuşlarıyla/oklarla
+ * diğer görseller arasında gezilir. `image.url` (thumbnailUrl değil) kullanılır.
+ */
+function ImageLightbox({
+  images,
+  index,
+  scientificName,
+  onClose,
+  onNavigate,
+}: {
+  images: PlantImage[];
+  index: number;
+  scientificName: string;
+  onClose: () => void;
+  onNavigate: (index: number) => void;
+}) {
+  const { t } = useTranslation();
+  const image = images[index];
+  const hasMultiple = images.length > 1;
+
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') onClose();
+      else if (event.key === 'ArrowRight') onNavigate((index + 1) % images.length);
+      else if (event.key === 'ArrowLeft') onNavigate((index - 1 + images.length) % images.length);
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [index, images.length, onClose, onNavigate]);
+
+  if (!image) return null;
+  const source = image.isPlaceholder
+    ? placeholderImageUrl(scientificName, imageIndex(image.id))
+    : image.url;
+
+  return (
+    <div
+      className="lightbox"
+      role="dialog"
+      aria-modal="true"
+      aria-label={t('image.open')}
+      onClick={onClose}
+      data-testid="image-lightbox"
+    >
+      <button
+        type="button"
+        className="lightbox__close"
+        onClick={onClose}
+        aria-label={t('detail.close')}
+        data-testid="lightbox-close"
+      >
+        ×
+      </button>
+
+      {hasMultiple && (
+        <button
+          type="button"
+          className="lightbox__nav lightbox__nav--prev"
+          onClick={(event) => {
+            event.stopPropagation();
+            onNavigate((index - 1 + images.length) % images.length);
+          }}
+          aria-label={t('image.prev')}
+        >
+          ‹
+        </button>
+      )}
+
+      <figure className="lightbox__figure" onClick={(event) => event.stopPropagation()}>
+        <img src={source} alt={image.caption ?? ''} />
+        <figcaption>
+          {image.isPlaceholder ? t('image.placeholder') : image.attributionText}
+          {hasMultiple && (
+            <span className="lightbox__count">
+              {' '}
+              · {t('image.countOf', { current: index + 1, total: images.length })}
+            </span>
+          )}
+        </figcaption>
+      </figure>
+
+      {hasMultiple && (
+        <button
+          type="button"
+          className="lightbox__nav lightbox__nav--next"
+          onClick={(event) => {
+            event.stopPropagation();
+            onNavigate((index + 1) % images.length);
+          }}
+          aria-label={t('image.next')}
+        >
+          ›
+        </button>
+      )}
+    </div>
+  );
 }
 
 /* ------------------------------------------------------------------ *
