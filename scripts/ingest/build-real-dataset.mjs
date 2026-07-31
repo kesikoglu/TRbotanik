@@ -22,12 +22,14 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildTaxonomyNodes, indexByRank, normalizeProvinceName, rollUpCounts } from '@trbotanik/shared';
 import { speciesKey } from './nuhungemisiParse.mjs';
+import { buildWcvpIndex, parseWcvpCsv } from './wcvpParse.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const RAW_DIR = resolve(here, '../../data/raw/gbif');
 const SNAPSHOT_DIR = resolve(here, '../../data/gbif-snapshot');
 const NUHUNGEMISI_DERIVED = resolve(here, '../../data/nuhungemisi/derived.json');
 const EUNIS_FILE = resolve(here, '../../data/raw/eunis/species-habitats.json');
+const WCVP_FILE = resolve(here, '../../data/curated/wcvp-turkey.csv');
 
 const IUCN_CODES = new Set(['EX', 'EW', 'CR', 'EN', 'VU', 'NT', 'LC', 'DD', 'NE']);
 
@@ -77,6 +79,25 @@ async function main() {
     console.log(`ℹ EUNIS habitat verisi yüklendi: ${eunis.speciesCount} tür eşleşmesi.`);
   }
   const eunisLookup = (name) => (eunis ? eunis.species[speciesKey(name)] ?? null : null);
+
+  let wcvpIndex = null;
+  if (existsSync(WCVP_FILE)) {
+    const wcvpRows = parseWcvpCsv(await readFile(WCVP_FILE, 'utf8'));
+    const byName = buildWcvpIndex(wcvpRows);
+    wcvpIndex = new Map([...byName].map(([name, value]) => [speciesKey(name), value]));
+    console.log(`ℹ WCVP verisi yüklendi: ${wcvpIndex.size} kabul edilmiş takson.`);
+  }
+  const wcvpLookup = (name) => (wcvpIndex ? wcvpIndex.get(speciesKey(name)) ?? null : null);
+  const WCVP_SOURCE = {
+    source: 'powo',
+    retrievedAt: now,
+    url: 'https://powo.science.kew.org',
+    citation:
+      'WCVP (World Checklist of Vascular Plants) — Royal Botanic Gardens, Kew. ' +
+      'Türkiye (TDWG:TUR/TUE) dağılımlı kabul edilmiş taksonlardan; kullanıcı tarafından yerel olarak ' +
+      'filtrelenip data/curated/wcvp-turkey.csv olarak eklendi.',
+  };
+
   const EUNIS_SOURCE = {
     source: 'eunis',
     retrievedAt: eunis?.generatedAt ?? now,
@@ -226,6 +247,8 @@ async function main() {
   let officialIucnFilled = 0;
   let withImages = 0;
   let withEunisHabitats = 0;
+  let withWcvpHabit = 0;
+  let withWcvpPublishedIn = 0;
   const isPartialCoverage = Boolean(nuhungemisi && nuhungemisi.provincesCovered.length < 81);
 
   const NUHUNGEMISI_SOURCE = {
@@ -245,6 +268,9 @@ async function main() {
     const own = occurrences.filter((o) => o.taxonId === taxonId);
     const observedSquares = [...new Set(own.map((o) => o.davisSquare))].sort();
     const official = officialLookup(entry.canonicalName);
+    const wcvp = wcvpLookup(entry.canonicalName);
+    if (wcvp?.habit) withWcvpHabit++;
+    if (wcvp?.publishedIn) withWcvpPublishedIn++;
 
     const lats = own.map((o) => o.lat);
     const lons = own.map((o) => o.lon);
@@ -302,14 +328,14 @@ async function main() {
 
     const missingReasons = {};
     if (!official || official.endemism === null) missingReasons.endemism = 'henuz-kuratorlenmedi';
-    missingReasons.habit = 'henuz-kuratorlenmedi';
+    if (!wcvp?.habit) missingReasons.habit = 'henuz-kuratorlenmedi';
     missingReasons.lifeForm = 'henuz-kuratorlenmedi';
     missingReasons.habitat = 'henuz-kuratorlenmedi';
     missingReasons.altitudeRange = 'henuz-kuratorlenmedi';
     missingReasons.floweringPeriod = 'henuz-kuratorlenmedi';
     missingReasons.fruitingPeriod = 'henuz-kuratorlenmedi';
     missingReasons.substrate = 'henuz-kuratorlenmedi';
-    missingReasons.publishedIn = 'henuz-kuratorlenmedi';
+    if (!wcvp?.publishedIn) missingReasons.publishedIn = 'henuz-kuratorlenmedi';
     missingReasons.davisSquares = 'henuz-kuratorlenmedi';
     missingReasons.floristicElement = 'henuz-kuratorlenmedi';
     if (!official?.iucnCode) missingReasons.iucn = 'henuz-kuratorlenmedi';
@@ -327,14 +353,14 @@ async function main() {
       authorship: sourced(entry.authorship, GBIF_SOURCE),
       taxonomicStatus: sourced('ACCEPTED', GBIF_SOURCE),
       synonyms: sourced(group.synonyms, GBIF_SOURCE),
-      publishedIn: sourced(null),
+      publishedIn: wcvp?.publishedIn ? sourced(wcvp.publishedIn, WCVP_SOURCE) : sourced(null),
       classification: sourced(
         { class: entry.class, order: entry.order, family: entry.family, genus: entry.genus },
         GBIF_SOURCE,
       ),
       vernacularTr: sourced((entry.vernacularTr ?? []).map((name) => ({ name })), GBIF_SOURCE),
       vernacularEn: sourced(entry.vernacularEn ?? [], GBIF_SOURCE),
-      habit: sourced(null),
+      habit: wcvp?.habit ? sourced(wcvp.habit, WCVP_SOURCE) : sourced(null),
       lifeForm: sourced(null),
       habitat: sourced(null),
       eunisHabitats: eunisHabitatsField,
@@ -379,7 +405,8 @@ async function main() {
   console.log(
     `ℹ Nuh'un Gemisi ile dolduruldu: ${officialEndemismFilled} endemizm, ${officialIucnFilled} IUCN. ` +
       `${withImages}/${accepted.size} türde en az bir gerçek fotoğraf var. ` +
-      `${withEunisHabitats}/${accepted.size} türde en az bir EUNIS habitat kodu var.`,
+      `${withEunisHabitats}/${accepted.size} türde en az bir EUNIS habitat kodu var. ` +
+      `${withWcvpHabit}/${accepted.size} türde WCVP'den yaşam formu, ${withWcvpPublishedIn}/${accepted.size} türde ilk yayın bilgisi var.`,
   );
 
   /* -------------------------------------------------------------- *
