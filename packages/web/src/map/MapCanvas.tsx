@@ -22,6 +22,8 @@ function occurrencePopupHtml(
   props: Record<string, unknown>,
   t: (key: string, options?: Record<string, unknown>) => string,
 ): string {
+  const species = props['species'] as string | null | undefined;
+  const vernacular = props['vernacular'] as string | null | undefined;
   const province = props['province'] as string | null | undefined;
   const year = props['year'] as number | null | undefined;
   const elevationM = props['elevationM'] as number | null | undefined;
@@ -40,8 +42,15 @@ function occurrencePopupHtml(
     [t('popup.fieldSource'), t(source === 'community' ? 'legend.pointsCommunity' : 'legend.pointsGbif')],
   ];
 
+  // Bu katmandaki her nokta AYNI türe ait (seçili tür), ama kullanıcı detay
+  // panelini kaydırmış/unutmuş olabilir — bitki adı popup'ta da tekrarlanır.
+  const heading = species
+    ? `<p class="popup__title" style="font-family:var(--font-serif);font-style:italic;">${escapeHtml(species)}</p>` +
+      (vernacular ? `<p class="popup__meta">${escapeHtml(vernacular)}</p>` : '')
+    : `<p class="popup__title">${escapeHtml(t('popup.occurrenceTitle'))}</p>`;
+
   return (
-    `<p class="popup__title">${escapeHtml(t('popup.occurrenceTitle'))}</p>` +
+    heading +
     rows
       .map(([label, value]) => `<p class="popup__meta"><strong>${escapeHtml(label)}:</strong> ${value}</p>`)
       .join('')
@@ -692,6 +701,8 @@ export function MapCanvas({ dataset, selection }: Props) {
       // taksonun kayıtlarını alıyoruz — kullanıcı dar bir filtre uygulasa bile "bu tür
       // nerede?" sorusunun yanıtı her zaman eksiksiz olsun.
       const occurrences = dataset.occurrences.filter((o) => o.taxonId === selectedSpeciesId);
+      // Katmandaki her nokta aynı türe ait; adı popup'ta göstermek için bir kez alınır.
+      const speciesNode = dataset.nodes[selectedSpeciesId];
 
       source.setData({
         type: 'FeatureCollection',
@@ -699,6 +710,8 @@ export function MapCanvas({ dataset, selection }: Props) {
           type: 'Feature' as const,
           properties: {
             id: occ.id,
+            species: speciesNode?.name ?? null,
+            vernacular: speciesNode?.vernacularTr ?? null,
             province: occ.province,
             year: occ.year,
             elevationM: occ.elevationM,
@@ -757,7 +770,7 @@ export function MapCanvas({ dataset, selection }: Props) {
 
     if (readyRef.current) update();
     else map.once('trbotanik.ready', update);
-  }, [selectedSpeciesId, dataset.occurrences, dataset.details]);
+  }, [selectedSpeciesId, dataset.occurrences, dataset.details, dataset.nodes]);
 
   return <div ref={containerRef} className="map-canvas" data-testid="map-canvas" />;
 }
