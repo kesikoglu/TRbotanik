@@ -17,12 +17,13 @@
  * (ingest scriptlerine dokunarak veya elle) tetiklediğimde yenilenir.
  */
 import { existsSync } from 'node:fs';
-import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, readdir } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildTaxonomyNodes, indexByRank, normalizeProvinceName, rollUpCounts } from '@trbotanik/shared';
 import { speciesKey } from './nuhungemisiParse.mjs';
 import { buildWcvpIndex, parseWcvpCsv } from './wcvpParse.mjs';
+import { parseVolumeFile } from './floraOfTurkeyParse.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const RAW_DIR = resolve(here, '../../data/raw/gbif');
@@ -30,6 +31,7 @@ const SNAPSHOT_DIR = resolve(here, '../../data/gbif-snapshot');
 const NUHUNGEMISI_DERIVED = resolve(here, '../../data/nuhungemisi/derived.json');
 const EUNIS_FILE = resolve(here, '../../data/raw/eunis/species-habitats.json');
 const WCVP_FILE = resolve(here, '../../data/curated/wcvp-turkey.csv');
+const FLORA_OF_TURKEY_DIR = resolve(here, '../../data/curated/flora-of-turkey');
 
 const IUCN_CODES = new Set(['EX', 'EW', 'CR', 'EN', 'VU', 'NT', 'LC', 'DD', 'NE']);
 
@@ -96,6 +98,37 @@ async function main() {
       'WCVP (World Checklist of Vascular Plants) — Royal Botanic Gardens, Kew. ' +
       'Türkiye (TDWG:TUR/TUE) dağılımlı kabul edilmiş taksonlardan; kullanıcı tarafından yerel olarak ' +
       'filtrelenip data/curated/wcvp-turkey.csv olarak eklendi.',
+  };
+
+  // Flora of Turkey ciltleri (P. H. Davis, 1965–1988) — Davis kareleme sisteminin
+  // BİZZAT kaynağı; her cilt OCR ile çıkarılıp data/curated/flora-of-turkey/'a
+  // .xlsx olarak eklenir. Birden çok cilt aynı türe atıfta bulunabilir (nadiren),
+  // bu yüzden kareler tüm ciltler boyunca birleştirilir (union).
+  const floraOfTurkeyIndex = new Map(); // speciesKey(ad) -> Set<DavisCode>
+  if (existsSync(FLORA_OF_TURKEY_DIR)) {
+    const files = (await readdir(FLORA_OF_TURKEY_DIR)).filter((f) => f.endsWith('.xlsx'));
+    for (const file of files) {
+      const perVolume = await parseVolumeFile(resolve(FLORA_OF_TURKEY_DIR, file));
+      for (const [name, squares] of perVolume) {
+        const key = speciesKey(name);
+        const existing = floraOfTurkeyIndex.get(key) ?? new Set();
+        for (const code of squares) existing.add(code);
+        floraOfTurkeyIndex.set(key, existing);
+      }
+      console.log(`ℹ Flora of Turkey ${file} yüklendi: ${perVolume.size} tür için kare atfı.`);
+    }
+  }
+  const floraOfTurkeyLookup = (name) => {
+    const squares = floraOfTurkeyIndex.get(speciesKey(name));
+    return squares ? [...squares].sort() : null;
+  };
+  const FLORA_OF_TURKEY_SOURCE = {
+    source: 'flora-of-turkey',
+    retrievedAt: now,
+    citation:
+      "P. H. Davis (ed.), Flora of Turkey and the East Aegean Islands (1965–1988). " +
+      'Basılı ciltlerin OCR taramasından, dağılım paragraflarındaki Davis kare atıflarından çıkarıldı ' +
+      '(kullanıcı tarafından sağlandı) — Davis kareleme sisteminin tanımlandığı asıl kaynak.',
   };
 
   const EUNIS_SOURCE = {
@@ -249,6 +282,7 @@ async function main() {
   let withEunisHabitats = 0;
   let withWcvpHabit = 0;
   let withWcvpPublishedIn = 0;
+  let withFloraOfTurkeySquares = 0;
   const isPartialCoverage = Boolean(nuhungemisi && nuhungemisi.provincesCovered.length < 81);
 
   const NUHUNGEMISI_SOURCE = {
@@ -271,6 +305,8 @@ async function main() {
     const wcvp = wcvpLookup(entry.canonicalName);
     if (wcvp?.habit) withWcvpHabit++;
     if (wcvp?.publishedIn) withWcvpPublishedIn++;
+    const literatureSquares = floraOfTurkeyLookup(entry.canonicalName);
+    if (literatureSquares) withFloraOfTurkeySquares++;
 
     const lats = own.map((o) => o.lat);
     const lons = own.map((o) => o.lon);
@@ -336,7 +372,7 @@ async function main() {
     missingReasons.fruitingPeriod = 'henuz-kuratorlenmedi';
     missingReasons.substrate = 'henuz-kuratorlenmedi';
     if (!wcvp?.publishedIn) missingReasons.publishedIn = 'henuz-kuratorlenmedi';
-    missingReasons.davisSquares = 'henuz-kuratorlenmedi';
+    if (!literatureSquares) missingReasons.davisSquares = 'henuz-kuratorlenmedi';
     missingReasons.floristicElement = 'henuz-kuratorlenmedi';
     if (!official?.iucnCode) missingReasons.iucn = 'henuz-kuratorlenmedi';
     if (!official) missingReasons.officialProvinces = 'kaynakta-yok';
@@ -371,7 +407,7 @@ async function main() {
       endemism: endemismField,
       iucn: iucnField,
       floristicElement: sourced([]),
-      davisSquares: sourced([]),
+      davisSquares: literatureSquares ? sourced(literatureSquares, FLORA_OF_TURKEY_SOURCE) : sourced([]),
       officialProvinces: official ? (sourced(official.provinces, NUHUNGEMISI_SOURCE)) : sourced([]),
       observedDavisSquares: observedSquares,
       distribution: {
@@ -406,7 +442,8 @@ async function main() {
     `ℹ Nuh'un Gemisi ile dolduruldu: ${officialEndemismFilled} endemizm, ${officialIucnFilled} IUCN. ` +
       `${withImages}/${accepted.size} türde en az bir gerçek fotoğraf var. ` +
       `${withEunisHabitats}/${accepted.size} türde en az bir EUNIS habitat kodu var. ` +
-      `${withWcvpHabit}/${accepted.size} türde WCVP'den yaşam formu, ${withWcvpPublishedIn}/${accepted.size} türde ilk yayın bilgisi var.`,
+      `${withWcvpHabit}/${accepted.size} türde WCVP'den yaşam formu, ${withWcvpPublishedIn}/${accepted.size} türde ilk yayın bilgisi var. ` +
+      `${withFloraOfTurkeySquares}/${accepted.size} türde Flora of Turkey'den literatür Davis kare atfı var.`,
   );
 
   /* -------------------------------------------------------------- *
