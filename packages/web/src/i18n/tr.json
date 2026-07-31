@@ -28,7 +28,9 @@
     "backToAll": "◀ Tümünü göster · {{count}} takson",
     "activeSelection": "Seçim: {{name}}",
     "noResults": "Eşleşen takson bulunamadı.",
-    "resultCount": "{{count}} takson"
+    "resultCount": "{{count}} takson",
+    "provinceLabel": "İle göre filtrele",
+    "provinceAll": "Tüm iller"
   },
   "rank": {
     "CLASS": "Sınıf",

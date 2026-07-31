@@ -28,7 +28,9 @@
     "backToAll": "◀ Show all · {{count}} taxa",
     "activeSelection": "Selected: {{name}}",
     "noResults": "No matching taxa.",
-    "resultCount": "{{count}} taxa"
+    "resultCount": "{{count}} taxa",
+    "provinceLabel": "Filter by province",
+    "provinceAll": "All provinces"
   },
   "rank": {
     "CLASS": "Class",

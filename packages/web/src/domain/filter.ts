@@ -16,6 +16,8 @@ export interface FilterState {
   query: string;
   endemicOnly: boolean;
   withRecordsOnly: boolean;
+  /** Seçili il; yalnızca bu ilde en az bir kaydı olan türler gösterilir */
+  province: string | null;
 }
 
 export const EMPTY_FILTER: FilterState = {
@@ -23,6 +25,7 @@ export const EMPTY_FILTER: FilterState = {
   query: '',
   endemicOnly: false,
   withRecordsOnly: false,
+  province: null,
 };
 
 export interface SelectionResult {
@@ -99,6 +102,12 @@ export function applyFilter(
   const intervals = toIntervals(nodes, filter.selectedTaxonIds);
   const queryMatches = matchQuery(nodes, filter.query);
 
+  // İl filtresi occurrence düzeyinde tutulur (tür düğümünde il bilgisi yok);
+  // bir tür, o ilde en az bir kaydı varsa dahil edilir.
+  const provinceSpeciesIds = filter.province
+    ? new Set(occurrences.filter((o) => o.province === filter.province).map((o) => o.taxonId))
+    : null;
+
   // 1) Filtreye uyan türleri belirle
   const speciesIds = new Set<number>();
   for (const node of nodes) {
@@ -106,6 +115,7 @@ export function applyFilter(
     if (!isInSelection(node.id, intervals)) continue;
     if (filter.endemicOnly && !endemicIds.has(node.id)) continue;
     if (filter.withRecordsOnly && node.occurrenceCount === 0) continue;
+    if (provinceSpeciesIds && !provinceSpeciesIds.has(node.id)) continue;
     if (queryMatches && !matchesWithAncestors(nodes, node, queryMatches)) continue;
     speciesIds.add(node.id);
   }

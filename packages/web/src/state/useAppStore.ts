@@ -33,6 +33,7 @@ interface AppState {
   clearFilter: () => void;
   toggleEndemicOnly: () => void;
   toggleWithRecordsOnly: () => void;
+  setProvince: (province: string | null) => void;
   setMapMode: (mode: MapMode) => void;
   setMetric: (metric: ChoroplethMetric) => void;
   selectSpecies: (id: number | null) => void;
@@ -72,6 +73,8 @@ export const useAppStore = create<AppState>((set) => ({
     set((state) => ({
       filter: { ...state.filter, withRecordsOnly: !state.filter.withRecordsOnly },
     })),
+
+  setProvince: (province) => set((state) => ({ filter: { ...state.filter, province } })),
 
   setMapMode: (mapMode) => set({ mapMode }),
   setMetric: (metric) => set({ metric }),

@@ -49,6 +49,16 @@ function Workspace({ dataset }: { dataset: Dataset }) {
 
   const endemicIds = useMemo(() => buildEndemicSet(dataset.details), [dataset.details]);
 
+  // Bu ortamdan bilinen türü olan (occurrence kaydında province dolu) tüm iller —
+  // kullanıcının seçmesi için; sonucu boş çıkacak bir il listede görünmez.
+  const provinces = useMemo(() => {
+    const set = new Set<string>();
+    for (const occ of dataset.occurrences) {
+      if (occ.province) set.add(occ.province);
+    }
+    return [...set].sort((a, b) => a.localeCompare(b, 'tr'));
+  }, [dataset.occurrences]);
+
   const selection = useMemo(
     () => applyFilter(dataset.nodes, dataset.occurrences, endemicIds, filter),
     [dataset.nodes, dataset.occurrences, endemicIds, filter],
@@ -108,6 +118,7 @@ function Workspace({ dataset }: { dataset: Dataset }) {
           rootIds={dataset.rootIds}
           endemicIds={endemicIds}
           selection={selection}
+          provinces={provinces}
         />
 
         <div className="map-pane">

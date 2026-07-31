@@ -201,6 +201,16 @@ button {
   color: var(--c-text-faint);
 }
 
+.select-box {
+  margin-top: var(--sp-2);
+  appearance: none;
+  cursor: pointer;
+  padding-right: calc(var(--sp-3) + 14px);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%239fb3a6' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--sp-3) center;
+}
+
 .filter-row {
   display: flex;
   flex-wrap: wrap;
@@ -289,6 +299,13 @@ button {
 
 .tree__row--selected {
   background: var(--c-surface-3);
+}
+
+/* Arama sorgusuyla DOĞRUDAN eşleşen satır (bkz. TaxonomySidebar matchedIds) —
+   yalnızca kaydırmayla o türe ulaşan ataçlardan ayırt edilsin diye vurgulanır. */
+.tree__row--match {
+  outline: 1px solid var(--c-accent);
+  outline-offset: -1px;
 }
 
 .tree__toggle {

@@ -1,7 +1,7 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TaxonNode } from '@trbotanik/shared';
-import type { SelectionResult } from '../domain/filter';
+import { normalizeTr, type SelectionResult } from '../domain/filter';
 import { useAppStore } from '../state/useAppStore';
 
 interface Props {
@@ -9,6 +9,8 @@ interface Props {
   rootIds: number[];
   endemicIds: Set<number>;
   selection: SelectionResult;
+  /** En az bir kaydı olan iller — il filtresi seçeneklerini doldurur */
+  provinces: string[];
 }
 
 interface Row {
@@ -50,7 +52,7 @@ function flatten(
   return rows;
 }
 
-export function TaxonomySidebar({ nodes, rootIds, endemicIds, selection }: Props) {
+export function TaxonomySidebar({ nodes, rootIds, endemicIds, selection, provinces }: Props) {
   const { t } = useTranslation();
 
   const filter = useAppStore((s) => s.filter);
@@ -61,10 +63,14 @@ export function TaxonomySidebar({ nodes, rootIds, endemicIds, selection }: Props
   const clearFilter = useAppStore((s) => s.clearFilter);
   const toggleEndemicOnly = useAppStore((s) => s.toggleEndemicOnly);
   const toggleWithRecordsOnly = useAppStore((s) => s.toggleWithRecordsOnly);
+  const setProvince = useAppStore((s) => s.setProvince);
   const toggleExpanded = useAppStore((s) => s.toggleExpanded);
   const expandMany = useAppStore((s) => s.expandMany);
   const selectSpecies = useAppStore((s) => s.selectSpecies);
   const selectSquare = useAppStore((s) => s.selectSquare);
+
+  const treeRef = useRef<HTMLUListElement>(null);
+  const rowRefs = useRef(new Map<number, HTMLLIElement>());
 
   /**
    * Sonuç kümesi yeterince daraldığında eşleşenlerin yolunu otomatik aç.
@@ -95,12 +101,46 @@ export function TaxonomySidebar({ nodes, rootIds, endemicIds, selection }: Props
     [nodes, rootIds, expandedNodes, selection.visibleTaxonIds],
   );
 
+  /**
+   * Arama sorgusuna DOĞRUDAN uyan düğümler (atalar üzerinden değil, kendi adı/
+   * Türkçe adıyla) — bunlar `tree__row--match` ile vurgulanır ve ilki otomatik
+   * görünür alana kaydırılır. `visibleTaxonIds` eşleşen türlerin TÜM atalarını
+   * da içerdiği için (bkz. filter.ts), bu ayrım olmadan "eşleşme nerede?"
+   * sorusu kullanıcı için ağacın derinliklerinde kaybolabiliyordu.
+   */
+  const query = filter.query.trim();
+  const matchedIds = useMemo(() => {
+    if (!query) return null;
+    const needle = normalizeTr(query);
+    const matched = new Set<number>();
+    for (const id of selection.visibleTaxonIds) {
+      const node = nodes[id];
+      if (!node) continue;
+      if (normalizeTr(`${node.name} ${node.vernacularTr ?? ''}`).includes(needle)) {
+        matched.add(id);
+      }
+    }
+    return matched;
+  }, [query, selection.visibleTaxonIds, nodes]);
+
+  useEffect(() => {
+    if (!matchedIds || matchedIds.size === 0) return;
+    const firstMatchId = rows.find((row) => matchedIds.has(row.node.id))?.node.id;
+    if (firstMatchId === undefined) return;
+    const element = rowRefs.current.get(firstMatchId);
+    element?.scrollIntoView({ block: 'center' });
+    // Yalnızca yeni bir arama sonucunda kaydır — kullanıcı elle kaydırınca tekrar
+    // zıplamasın diye `rows` bağımlılıklara BİLEREK eklenmiyor.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [matchedIds]);
+
   const selectedIds = new Set(filter.selectedTaxonIds);
   const hasFilter =
     filter.selectedTaxonIds.length > 0 ||
     filter.query.trim() !== '' ||
     filter.endemicOnly ||
-    filter.withRecordsOnly;
+    filter.withRecordsOnly ||
+    filter.province !== null;
 
   /**
    * Ağaçta bir üst taksonu (ör. sınıf) tekrar tıklamak seçimi genişletebilir
@@ -127,6 +167,24 @@ export function TaxonomySidebar({ nodes, rootIds, endemicIds, selection }: Props
           onChange={(event) => setQuery(event.target.value)}
           data-testid="taxon-search"
         />
+
+        <label className="visually-hidden" htmlFor="province-filter">
+          {t('filter.provinceLabel')}
+        </label>
+        <select
+          id="province-filter"
+          className="search-box select-box"
+          value={filter.province ?? ''}
+          onChange={(event) => setProvince(event.target.value || null)}
+          data-testid="province-filter"
+        >
+          <option value="">{t('filter.provinceAll')}</option>
+          {provinces.map((province) => (
+            <option key={province} value={province}>
+              {province}
+            </option>
+          ))}
+        </select>
 
         <div className="filter-row">
           <button
@@ -174,17 +232,24 @@ export function TaxonomySidebar({ nodes, rootIds, endemicIds, selection }: Props
         {rows.length === 0 ? (
           <p className="empty-note">{t('filter.noResults')}</p>
         ) : (
-          <ul className="tree" data-testid="taxon-tree">
+          <ul className="tree" data-testid="taxon-tree" ref={treeRef}>
             {rows.map(({ node, depth, hasChildren }) => {
               const isSpecies = node.rank === 'SPECIES';
               const isSelected = selectedIds.has(node.id) || selectedSpeciesId === node.id;
               const isExpanded = expandedNodes.has(node.id);
+              const isMatch = matchedIds?.has(node.id) ?? false;
 
               return (
-                <li key={node.id}>
+                <li
+                  key={node.id}
+                  ref={(element) => {
+                    if (element) rowRefs.current.set(node.id, element);
+                    else rowRefs.current.delete(node.id);
+                  }}
+                >
                   <button
                     type="button"
-                    className={`tree__row${isSelected ? ' tree__row--selected' : ''}`}
+                    className={`tree__row${isSelected ? ' tree__row--selected' : ''}${isMatch ? ' tree__row--match' : ''}`}
                     style={{ paddingLeft: `${depth * 12 + 8}px` }}
                     data-testid={`taxon-${node.id}`}
                     onClick={() => {

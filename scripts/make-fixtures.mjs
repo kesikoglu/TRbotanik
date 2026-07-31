@@ -25,6 +25,7 @@ import * as turf from '@turf/turf';
 import {
   buildTaxonomyNodes,
   davisSquareFor,
+  DAVIS_SQUARE_PROVINCES,
   indexByRank,
   rollUpCounts,
 } from '@trbotanik/shared';
@@ -90,6 +91,18 @@ function mulberry32(seed) {
 }
 const random = mulberry32(SEED);
 const pick = (arr) => arr[Math.floor(random() * arr.length)];
+
+/**
+ * Sentetik bir noktaya, düştüğü Davis karesinin kapsadığı bilinen illerden
+ * (DAVIS_SQUARE_PROVINCES — yönlendirme amaçlı, tam sınır değil) rastgele
+ * birini atar. Yalnızca fixture modunda il filtresini gösterebilmek için;
+ * gerçek veride bu alan GBIF kaydının kendi il bilgisinden gelir.
+ */
+function pickFixtureProvince(square) {
+  const candidates = DAVIS_SQUARE_PROVINCES[square];
+  if (!candidates || candidates.length === 0) return null;
+  return pick(candidates).replace(/\s*\([^)]*\)\s*$/, '').trim();
+}
 const randInt = (min, max) => min + Math.floor(random() * (max - min + 1));
 
 /* ------------------------------------------------------------------ *
@@ -190,7 +203,7 @@ for (const entry of speciesEntries) {
       davisSquare: square,
       coordinateUncertaintyM: pick([10, 25, 100, 100, 250, 1000, 5000]),
       year: randInt(1962, 2025),
-      province: null,
+      province: pickFixtureProvince(square),
       elevationM: alt ? randInt(alt[0], alt[1]) : randInt(0, 2200),
       basisOfRecord: pick(BASIS),
       source: 'fixture',

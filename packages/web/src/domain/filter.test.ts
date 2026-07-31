@@ -48,10 +48,10 @@ const occurrence = (
 
 // Ankara (B4) ve Antalya (C3) çevresi
 const occurrences: OccurrenceRecord[] = [
-  { ...occurrence('a1', geven, 39.93, 32.86), davisSquare: 'B4' },
-  { ...occurrence('a2', geven, 39.5, 32.2), davisSquare: 'B4' },
-  { ...occurrence('a3', geven, 36.9, 30.7), davisSquare: 'C3' },
-  { ...occurrence('b1', sevgi, 39.85, 32.7), davisSquare: 'B4' },
+  { ...occurrence('a1', geven, 39.93, 32.86), davisSquare: 'B4', province: 'Ankara' },
+  { ...occurrence('a2', geven, 39.5, 32.2), davisSquare: 'B4', province: 'Ankara' },
+  { ...occurrence('a3', geven, 36.9, 30.7), davisSquare: 'C3', province: 'Antalya' },
+  { ...occurrence('b1', sevgi, 39.85, 32.7), davisSquare: 'B4', province: 'Ankara' },
 ];
 
 rollUpCounts(
@@ -100,6 +100,23 @@ describe('applyFilter', () => {
     });
     expect(result.speciesIds).toEqual(new Set([sevgi]));
     expect(result.totals.records).toBe(1);
+  });
+
+  it('il filtresi yalnızca o ilde kaydı olan türleri bırakır', () => {
+    const result = applyFilter(nodes, occurrences, endemicIds, {
+      ...EMPTY_FILTER,
+      province: 'Antalya',
+    });
+    expect(result.speciesIds).toEqual(new Set([geven]));
+  });
+
+  it('il filtresi eşleşen türün TÜM kayıtlarını gösterir (yalnızca o ildekileri değil)', () => {
+    const result = applyFilter(nodes, occurrences, endemicIds, {
+      ...EMPTY_FILTER,
+      province: 'Ankara',
+    });
+    expect(result.speciesIds).toEqual(new Set([geven, sevgi]));
+    expect(result.totals.records).toBe(4);
   });
 
   it('Türkçe ada göre arama yapar', () => {
