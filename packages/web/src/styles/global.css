@@ -187,6 +187,22 @@ button {
   color: var(--c-text-faint);
 }
 
+.sidebar__heading-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-2);
+}
+
+.sidebar__heading-row .sidebar__heading {
+  flex: 1;
+  min-width: 0;
+}
+
+.sidebar__heading-row .chip {
+  flex-shrink: 0;
+}
+
 .search-box {
   width: 100%;
   padding: var(--sp-2) var(--sp-3);

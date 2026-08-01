@@ -104,8 +104,12 @@ function davisFillOpacity(drawLandFill: boolean): PropertyValueSpecification<num
   return [
     'case',
     ['boolean', ['feature-state', 'hover'], false],
-    0.92,
-    drawLandFill ? 0.85 : 0.62,
+    0.85,
+    // Uydu altlıklarında (drawLandFill=false) karo görüntüsü zaten kendi zeminini
+    // sağlıyor — choropleth dolgusu daha soluk tutulur ki altındaki uydu görüntüsü
+    // kolayca seçilebilsin. Çevrimdışı altlıkta (kendi sentetik zemini) dolgu daha
+    // belirgin kalabilir çünkü altında gösterilecek gerçek bir karo yok.
+    drawLandFill ? 0.85 : 0.38,
   ];
 }
 

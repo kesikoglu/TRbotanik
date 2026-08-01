@@ -26,6 +26,7 @@
     "withRecords": "With records",
     "clear": "Clear filters",
     "backToAll": "◀ Show all · {{count}} taxa",
+    "collapseAll": "Collapse all",
     "activeSelection": "Selected: {{name}}",
     "noResults": "No matching taxa.",
     "resultCount": "{{count}} taxa",

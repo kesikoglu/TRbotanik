@@ -44,6 +44,7 @@ interface AppState {
   selectSquare: (code: DavisCode | null) => void;
   toggleExpanded: (id: number) => void;
   expandMany: (ids: Iterable<number>) => void;
+  collapseAll: () => void;
   setBasemap: (id: string) => void;
   setBasemapTileError: (hasError: boolean) => void;
 }
@@ -107,6 +108,8 @@ export const useAppStore = create<AppState>((set) => ({
       for (const id of ids) expanded.add(id);
       return { expandedNodes: expanded };
     }),
+
+  collapseAll: () => set({ expandedNodes: new Set<number>() }),
 
   setBasemap: (id) => {
     try {

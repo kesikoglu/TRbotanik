@@ -26,6 +26,7 @@
     "withRecords": "Kayıtlı taksonlar",
     "clear": "Filtreleri temizle",
     "backToAll": "◀ Tümünü göster · {{count}} takson",
+    "collapseAll": "Tümünü daralt",
     "activeSelection": "Seçim: {{name}}",
     "noResults": "Eşleşen takson bulunamadı.",
     "resultCount": "{{count}} takson",

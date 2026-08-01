@@ -66,6 +66,7 @@ export function TaxonomySidebar({ nodes, rootIds, endemicIds, selection, provinc
   const setProvince = useAppStore((s) => s.setProvince);
   const toggleExpanded = useAppStore((s) => s.toggleExpanded);
   const expandMany = useAppStore((s) => s.expandMany);
+  const collapseAll = useAppStore((s) => s.collapseAll);
   const selectSpecies = useAppStore((s) => s.selectSpecies);
   const selectSquare = useAppStore((s) => s.selectSquare);
 
@@ -89,12 +90,6 @@ export function TaxonomySidebar({ nodes, rootIds, endemicIds, selection, provinc
     }
     if (toExpand.length > 0) expandMany(toExpand);
   }, [selection.totals.species, selection.visibleTaxonIds, nodes, expandMany]);
-
-  // Açılışta sınıf ve takım düzeyini açık göster
-  useEffect(() => {
-    const initial = nodes.filter((n) => n.rank === 'CLASS' || n.rank === 'ORDER').map((n) => n.id);
-    expandMany(initial);
-  }, [nodes, expandMany]);
 
   const rows = useMemo(
     () => flatten(nodes, rootIds, expandedNodes, selection.visibleTaxonIds),
@@ -122,6 +117,26 @@ export function TaxonomySidebar({ nodes, rootIds, endemicIds, selection, provinc
     }
     return matched;
   }, [query, selection.visibleTaxonIds, nodes]);
+
+  /**
+   * Eşleşen düğümlerin ATA yolunu (kendi alt ağacını değil) daima açar —
+   * ağaç artık açılışta kapalı başladığı için, bu olmadan geniş bir eşleşme
+   * (ör. "Fabaceae", 1000+ tür — AUTO_EXPAND_THRESHOLD'un çok üzerinde)
+   * hiçbir zaman görünür bir satıra dönüşmezdi (üstündeki sınıf/takım kapalı
+   * kaldığı için ağaç o dala hiç inmezdi).
+   */
+  useEffect(() => {
+    if (!matchedIds || matchedIds.size === 0) return;
+    const ancestors = new Set<number>();
+    for (const id of matchedIds) {
+      let current = nodes[id]?.parentId ?? null;
+      while (current !== null) {
+        ancestors.add(current);
+        current = nodes[current]?.parentId ?? null;
+      }
+    }
+    if (ancestors.size > 0) expandMany(ancestors);
+  }, [matchedIds, nodes, expandMany]);
 
   useEffect(() => {
     if (!matchedIds || matchedIds.size === 0) return;
@@ -213,9 +228,20 @@ export function TaxonomySidebar({ nodes, rootIds, endemicIds, selection, provinc
       </div>
 
       <div className="sidebar__section">
-        <p className="sidebar__heading">
-          {t('filter.taxonomy')} · {t('filter.resultCount', { count: selection.totals.species })}
-        </p>
+        <div className="sidebar__heading-row">
+          <p className="sidebar__heading">
+            {t('filter.taxonomy')} · {t('filter.resultCount', { count: selection.totals.species })}
+          </p>
+          <button
+            type="button"
+            className="chip"
+            onClick={collapseAll}
+            data-testid="collapse-all"
+            title={t('filter.collapseAll')}
+          >
+            {t('filter.collapseAll')}
+          </button>
+        </div>
         {hasFilter && (
           <button
             type="button"
