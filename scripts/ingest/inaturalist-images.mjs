@@ -31,6 +31,14 @@ const INAT = 'https://api.inaturalist.org/v1';
 const IMAGES_PER_SPECIES = Number(process.env['INAT_IMAGES_PER_SPECIES'] ?? 3);
 const REQUESTS_PER_MINUTE = 50;
 const ALLOWED_LICENSES = 'cc0,cc-by,cc-by-sa,cc-by-nc,cc-by-nc-sa';
+// "research" (topluluk kimliği doğrulanmış) gözlemler iNaturalist'teki tüm
+// gözlemlerin küçük bir alt kümesidir — nadir/az gözlemlenen Türkiye
+// endemikleri için çoğunlukla hiç "research grade" gözlem yoktur, ama
+// "needs_id" (gözlemcinin kendi tanımladığı, henüz topluluk onayı almamış)
+// gözlemler genelde vardır. Fotoğraf yalnızca görsel bir ek — habitat/
+// endemizm gibi bilimsel alanlar gibi otoriter değil — bu yüzden burada
+// tanı kesinliğinden çok kapsamı önceliklendiriyoruz.
+const ALLOWED_QUALITY_GRADES = 'research,needs_id';
 // Tek tek istek retry/timeout'u (retries=2/15sn) sürdürülen bir 429 fırtınasını
 // sınırlamaz — art arda çok sayıda başarısızlık, iNaturalist'in geçici olarak
 // bizi tamamen engellediğinin işaretidir. Bu durumda hemen tekrar denemek
@@ -85,7 +93,7 @@ function toPlantImages(observations) {
 async function fetchImagesFor(scientificName) {
   const url =
     `${INAT}/observations?taxon_name=${encodeURIComponent(scientificName)}` +
-    `&photos=true&photo_license=${ALLOWED_LICENSES}&quality_grade=research` +
+    `&photos=true&photo_license=${ALLOWED_LICENSES}&quality_grade=${ALLOWED_QUALITY_GRADES}` +
     `&order_by=votes&order=desc&per_page=10`;
   // Fotoğraf kaybı düşük riskli (tür verisi değil, görsel eksik kalır) — bu
   // yüzden GBIF çekimindeki kadar sabırlı (5 deneme × 30sn) davranmıyoruz.
@@ -124,7 +132,13 @@ async function main() {
     console.log(`Var olan kontrol noktası: ${Object.keys(checkpoint).length} tür.`);
   }
 
-  const pending = ordered.filter((e) => !checkpoint[String(e.gbifKey)]);
+  // Daha önce hiç fotoğraf bulunamayan (boş dizi) türler de yeniden denenir —
+  // iNaturalist'in gözlem havuzu zamanla büyüyor, ve "needs_id" kapsamının
+  // eklenmesinden önce kaydedilmiş boş sonuçlar artık güncel değil olabilir.
+  const pending = ordered.filter((e) => {
+    const existing = checkpoint[String(e.gbifKey)];
+    return !existing || existing.length === 0;
+  });
   console.log(`${pending.length} tür yeni işlenecek (~${(pending.length / REQUESTS_PER_MINUTE).toFixed(0)} dk sürebilir).`);
 
   const wait = rateLimiter(REQUESTS_PER_MINUTE);
