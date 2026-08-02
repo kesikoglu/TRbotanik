@@ -1,10 +1,10 @@
 {
   "version": "1.0.0-gbif",
-  "generatedAt": "2026-08-01T08:20:10.269Z",
+  "generatedAt": "2026-08-02T07:31:06.858Z",
   "mode": "static",
   "taxonCount": 13286,
   "occurrenceCount": 154627,
   "gbifDownloadDoi": null,
-  "gbifRetrievedAt": "2026-08-01T08:20:10.269Z",
+  "gbifRetrievedAt": "2026-08-02T07:31:06.858Z",
   "notice": "Bu veri seti GBIF (Global Biodiversity Information Facility) hesapsız arama API'sinden çekilmiştir. Yayılış noktaları, her tür için GBIF'teki gerçek toplam kayıt sayısından örneklenmiş bir alt kümedir (bkz. distribution.occurrenceCount gerçek toplamı taşır). Habitat, yaşam formu, yükselti, çiçeklenme dönemi gibi alanlar GBIF tarafından sağlanmaz; bu alanlar \"henüz küratörlenmedi\" olarak işaretlenmiştir. EUNIS habitat kodları (EEA) yalnızca EUNIS'in karakteristik tür listesinde adı geçen türlerde bulunur — bu liste Avrupa ağırlıklıdır, bu yüzden çoğu tür için de \"henüz küratörlenmedi\" görünür."
 }
