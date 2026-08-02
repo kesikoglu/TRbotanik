@@ -24,6 +24,7 @@ on:
       - 'scripts/ingest/gbif-taxonomy.mjs'
       - 'scripts/ingest/gbif-occurrences.mjs'
       - 'scripts/ingest/inaturalist-images.mjs'
+      - 'scripts/ingest/wikimedia-images.mjs'
       - 'scripts/ingest/eunis-habitats.mjs'
       - 'scripts/ingest/build-real-dataset.mjs'
       - 'scripts/ingest/lib/**'
@@ -94,6 +95,9 @@ jobs:
 
       - name: Lisanslı fotoğrafları ara (iNaturalist)
         run: npm run data:gbif-images
+
+      - name: iNaturalist'te bulunamayan türler için Wikimedia Commons'ta ara
+        run: npm run data:wikimedia-images
 
       - name: İlerlemeyi önbelleğe kaydet
         if: always()

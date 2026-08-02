@@ -200,7 +200,7 @@ export interface PlantImage {
   licenseUrl: string | null;
   /** Görselin altında gösterilmesi zorunlu, önceden oluşturulmuş atıf metni */
   attributionText: string;
-  source: 'inaturalist' | 'gbif' | 'curated' | 'placeholder';
+  source: 'inaturalist' | 'wikimedia' | 'gbif' | 'curated' | 'placeholder';
   sourceUrl: string;
   /** Yerel üretilmiş yer tutucu görsel mi (fixture modu) */
   isPlaceholder: boolean;
