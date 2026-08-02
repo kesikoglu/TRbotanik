@@ -124,11 +124,27 @@ jobs:
           if git diff --cached --quiet; then
             echo "Değişiklik yok, commit atlanıyor."
             echo "pushed=false" >> "$GITHUB_OUTPUT"
-          else
-            git commit -m "data: GBIF/iNaturalist anlık görüntüsünü yenile"
-            git push origin HEAD:${{ github.ref_name }}
-            echo "pushed=true" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
+          git commit -m "data: GBIF/iNaturalist anlık görüntüsünü yenile"
+          # Bu adım saatlerce sürebilen bir işin (özellikle iNaturalist görsel
+          # taraması) sonunda çalışır; o süre boyunca dala başka push'lar
+          # gelmiş olabilir (run 30696210953'te tam olarak bu oldu — 5 saatlik
+          # bir görsel taraması, alakasız iki UI commit'i araya girdiği için
+          # push reddedildi ve TÜM emek kayboldu). Reddedilirse en son dalı
+          # çekip üzerine rebase edip yeniden dener — data/gbif-snapshot dışında
+          # hiçbir şeye dokunmadığımız için çakışma riski düşük.
+          for attempt in 1 2 3; do
+            if git push origin HEAD:${{ github.ref_name }}; then
+              echo "pushed=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            echo "Push reddedildi (deneme $attempt/3) — en son dal çekilip yeniden deneniyor."
+            git fetch origin ${{ github.ref_name }}
+            git rebase origin/${{ github.ref_name }}
+          done
+          echo "3 denemeden sonra push başarısız oldu." >&2
+          exit 1
 
       - name: Yeni veriyle yayını tetikle
         # GitHub, bir iş akışı içinden yapılan push'ların BAŞKA `on: push`
