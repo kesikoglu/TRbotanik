@@ -209,7 +209,10 @@ async function main() {
       name: entry.canonicalName,
       authorship: entry.authorship,
       gbifKey: entry.gbifKey,
-      vernacularTr: entry.vernacularTr?.[0],
+      // Nuh'un Gemisi (T.C. Tarım ve Orman Bakanlığı) türlerin %99'unda küratörlü bir
+      // Türkçe ad taşıyor; GBIF'in kendi vernacularNames'i çok daha seyrek ve
+      // denetimsiz (topluluk katkılı) olduğundan yalnızca yedek olarak kullanılır.
+      vernacularTr: officialLookup(entry.canonicalName)?.vernacularTr ?? entry.vernacularTr?.[0],
     });
   }
 
@@ -278,6 +281,7 @@ async function main() {
   const details = {};
   let officialEndemismFilled = 0;
   let officialIucnFilled = 0;
+  let officialVernacularFilled = 0;
   let withImages = 0;
   let withEunisHabitats = 0;
   let withWcvpHabit = 0;
@@ -394,7 +398,9 @@ async function main() {
         { class: entry.class, order: entry.order, family: entry.family, genus: entry.genus },
         GBIF_SOURCE,
       ),
-      vernacularTr: sourced((entry.vernacularTr ?? []).map((name) => ({ name })), GBIF_SOURCE),
+      vernacularTr: official?.vernacularTr
+        ? (officialVernacularFilled++, sourced([{ name: official.vernacularTr }], NUHUNGEMISI_SOURCE))
+        : sourced((entry.vernacularTr ?? []).map((name) => ({ name })), GBIF_SOURCE),
       vernacularEn: sourced(entry.vernacularEn ?? [], GBIF_SOURCE),
       habit: wcvp?.habit ? sourced(wcvp.habit, WCVP_SOURCE) : sourced(null),
       lifeForm: sourced(null),
@@ -439,7 +445,8 @@ async function main() {
   }
 
   console.log(
-    `ℹ Nuh'un Gemisi ile dolduruldu: ${officialEndemismFilled} endemizm, ${officialIucnFilled} IUCN. ` +
+    `ℹ Nuh'un Gemisi ile dolduruldu: ${officialEndemismFilled} endemizm, ${officialIucnFilled} IUCN, ` +
+      `${officialVernacularFilled} Türkçe ad. ` +
       `${withImages}/${accepted.size} türde en az bir gerçek fotoğraf var. ` +
       `${withEunisHabitats}/${accepted.size} türde en az bir EUNIS habitat kodu var. ` +
       `${withWcvpHabit}/${accepted.size} türde WCVP'den yaşam formu, ${withWcvpPublishedIn}/${accepted.size} türde ilk yayın bilgisi var. ` +
