@@ -9,7 +9,7 @@ import {
 } from '@trbotanik/shared';
 import { buildAttributeGroups, type AttrValue } from '../domain/attributeSchema';
 import type { SelectionResult } from '../domain/filter';
-import { placeholderImageUrl } from './placeholderImage';
+import { imageIndex, placeholderImageUrl } from './placeholderImage';
 import { useAppStore } from '../state/useAppStore';
 
 interface Props {
@@ -76,6 +76,23 @@ function SpeciesDetail({
             </span>
           </div>
         </div>
+        {detail.images[0] && (
+          <button
+            type="button"
+            className="detail__thumb"
+            onClick={() => setLightboxIndex(0)}
+            aria-label={t('image.open')}
+          >
+            <img
+              src={
+                detail.images[0].isPlaceholder
+                  ? placeholderImageUrl(node.name, imageIndex(detail.images[0].id))
+                  : detail.images[0].thumbnailUrl
+              }
+              alt={detail.images[0].caption ?? ''}
+            />
+          </button>
+        )}
         <button
           type="button"
           className="icon-button"
@@ -215,11 +232,6 @@ function ImageCard({
       </figcaption>
     </figure>
   );
-}
-
-function imageIndex(id: string): number {
-  const parsed = Number(id.slice(id.lastIndexOf('-') + 1));
-  return Number.isFinite(parsed) ? parsed : 0;
 }
 
 /**

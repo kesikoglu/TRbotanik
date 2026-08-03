@@ -24,6 +24,12 @@ export function placeholderImageUrl(scientificName: string, index: number): stri
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 }
 
+/** `<kaynak>-<isim>-<sıra>` biçimindeki görsel id'sinden sıra numarasını çıkarır. */
+export function imageIndex(id: string): number {
+  const parsed = Number(id.slice(id.lastIndexOf('-') + 1));
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
 function escapeXml(value: string): string {
   return value.replace(/[<>&'"]/g, (char) => {
     switch (char) {

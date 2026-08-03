@@ -5,9 +5,10 @@ import maplibregl, {
   type PropertyValueSpecification,
   type StyleSpecification,
 } from 'maplibre-gl';
-import { DAVIS_CODES, davisSquareBounds, type DavisCode } from '@trbotanik/shared';
+import { DAVIS_CODES, davisSquareBounds, type DavisCode, type PlantImage } from '@trbotanik/shared';
 import type { Dataset } from '../data/dataset';
 import { metricValue, type SelectionResult } from '../domain/filter';
+import { imageIndex, placeholderImageUrl } from '../features/placeholderImage';
 import { useAppStore } from '../state/useAppStore';
 import { getBasemap, sampleTileUrl, type BasemapDefinition } from './basemaps';
 import { CHOROPLETH_RAMP, MAP_COLORS, NO_DATA_COLOR, TURKIYE_VIEW_BOUNDS } from './theme';
@@ -18,6 +19,20 @@ function escapeHtml(value: string): string {
 }
 
 const OPEN_DETAIL_ATTR = 'data-open-detail';
+
+/**
+ * Bir türün ilk görselinin popup'ta gösterilecek adresini döner.
+ * Yer tutucu görseller veri setinde taşınmaz, SVG olarak burada üretilir
+ * (bkz. placeholderImage.ts) — DetailPane'in galeri kartlarındaki mantıkla aynı.
+ */
+function firstImageUrl(images: PlantImage[] | undefined, scientificName: string | null): string | null {
+  const image = images?.[0];
+  if (!image) return null;
+  if (image.isPlaceholder) {
+    return scientificName ? placeholderImageUrl(scientificName, imageIndex(image.id)) : null;
+  }
+  return image.thumbnailUrl;
+}
 
 /** Bir yayılış noktasının popup içeriğini üretir. */
 function occurrencePopupHtml(
@@ -32,6 +47,7 @@ function occurrencePopupHtml(
   const elevationM = props['elevationM'] as number | null | undefined;
   const basisOfRecord = props['basisOfRecord'] as string | undefined;
   const source = props['source'] as string | undefined;
+  const imageUrl = props['imageUrl'] as string | null | undefined;
 
   const missing = t('value.missing');
   const rows: Array<[string, string]> = [
@@ -57,7 +73,12 @@ function occurrencePopupHtml(
       ? `<button type="button" class="popup__item popup__action" ${OPEN_DETAIL_ATTR}="1">${escapeHtml(t('popup.openDetail'))}</button>`
       : '';
 
+  const imageHtml = imageUrl
+    ? `<img class="popup__image" src="${escapeHtml(imageUrl)}" alt="" />`
+    : '';
+
   return (
+    imageHtml +
     heading +
     rows
       .map(([label, value]) => `<p class="popup__meta"><strong>${escapeHtml(label)}:</strong> ${value}</p>`)
@@ -680,6 +701,7 @@ export function MapCanvas({ dataset, selection }: Props) {
               elevationM: occ.elevationM,
               basisOfRecord: occ.basisOfRecord,
               source: occ.source,
+              imageUrl: firstImageUrl(dataset.details[occ.taxonId]?.images, node?.name ?? null),
             },
             geometry: { type: 'Point' as const, coordinates: [occ.lon, occ.lat] },
           };
@@ -689,7 +711,7 @@ export function MapCanvas({ dataset, selection }: Props) {
 
     if (readyRef.current) update();
     else map.once('trbotanik.ready', update);
-  }, [selection, dataset.nodes]);
+  }, [selection, dataset.nodes, dataset.details]);
 
   /* ── Mod değişimi: katmanları yeniden kurmadan görünürlük değiştir ── */
   useEffect(() => {
@@ -784,8 +806,12 @@ export function MapCanvas({ dataset, selection }: Props) {
       // taksonun kayıtlarını alıyoruz — kullanıcı dar bir filtre uygulasa bile "bu tür
       // nerede?" sorusunun yanıtı her zaman eksiksiz olsun.
       const occurrences = dataset.occurrences.filter((o) => o.taxonId === selectedSpeciesId);
-      // Katmandaki her nokta aynı türe ait; adı popup'ta göstermek için bir kez alınır.
+      // Katmandaki her nokta aynı türe ait; adı ve görseli popup'ta göstermek için bir kez alınır.
       const speciesNode = dataset.nodes[selectedSpeciesId];
+      const speciesImageUrl = firstImageUrl(
+        dataset.details[selectedSpeciesId]?.images,
+        speciesNode?.name ?? null,
+      );
 
       source.setData({
         type: 'FeatureCollection',
@@ -800,6 +826,7 @@ export function MapCanvas({ dataset, selection }: Props) {
             elevationM: occ.elevationM,
             basisOfRecord: occ.basisOfRecord,
             source: occ.source,
+            imageUrl: speciesImageUrl,
           },
           geometry: { type: 'Point' as const, coordinates: [occ.lon, occ.lat] },
         })),

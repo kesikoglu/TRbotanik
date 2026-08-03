@@ -636,6 +636,15 @@ button {
   filter: brightness(1.08);
 }
 
+.popup__image {
+  display: block;
+  width: 100%;
+  height: 96px;
+  margin: 0 0 var(--sp-2);
+  border-radius: var(--r-sm);
+  object-fit: cover;
+}
+
 /* ── Detay paneli ─────────────────────────────────────────────────── */
 
 .detail {
@@ -653,6 +662,25 @@ button {
   gap: var(--sp-2);
   padding: var(--sp-4);
   border-bottom: 1px solid var(--c-border);
+}
+
+.detail__thumb {
+  flex-shrink: 0;
+  width: 88px;
+  height: 66px;
+  padding: 0;
+  background: var(--c-surface-2);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-md);
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.detail__thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .detail__names {
