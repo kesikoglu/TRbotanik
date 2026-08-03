@@ -32,6 +32,7 @@ const NUHUNGEMISI_DERIVED = resolve(here, '../../data/nuhungemisi/derived.json')
 const EUNIS_FILE = resolve(here, '../../data/raw/eunis/species-habitats.json');
 const WCVP_FILE = resolve(here, '../../data/curated/wcvp-turkey.csv');
 const FLORA_OF_TURKEY_DIR = resolve(here, '../../data/curated/flora-of-turkey');
+const IMAGE_BLOCKLIST_FILE = resolve(here, '../../data/curated/image-blocklist.csv');
 
 const IUCN_CODES = new Set(['EX', 'EW', 'CR', 'EN', 'VU', 'NT', 'LC', 'DD', 'NE']);
 
@@ -67,6 +68,22 @@ async function main() {
 
   const imagesFile = resolve(RAW_DIR, 'images.json');
   const imagesByKey = existsSync(imagesFile) ? JSON.parse(await readFile(imagesFile, 'utf8')) : {};
+
+  // Kaynak API'lerin (özellikle iNaturalist "needs_id" gözlemleri) yanlış türle
+  // eşleştirdiği görseller için — ham kontrol noktası her çalıştırmada aynı hatalı
+  // görseli getirmeye devam eder, bu yüzden dışlama burada, kalıcı olarak yapılır.
+  let blockedImageIds = new Set();
+  if (existsSync(IMAGE_BLOCKLIST_FILE)) {
+    const blocklistText = await readFile(IMAGE_BLOCKLIST_FILE, 'utf8');
+    blockedImageIds = new Set(
+      blocklistText
+        .split('\n')
+        .slice(1)
+        .map((line) => line.split(',')[0]?.trim())
+        .filter(Boolean),
+    );
+    console.log(`ℹ Görsel kara listesi yüklendi: ${blockedImageIds.size} görsel dışlanacak.`);
+  }
 
   let nuhungemisi = null;
   if (existsSync(NUHUNGEMISI_DERIVED)) {
@@ -343,10 +360,12 @@ async function main() {
       ? (withEunisHabitats++, sourced(eunisMatches, EUNIS_SOURCE))
       : sourced([]);
 
-    const images = (imagesByKey[String(entry.gbifKey)] ?? []).map((img) => ({
-      ...img,
-      // Ham kontrol noktası provenance taşımaz — burada ekleniyor
-    }));
+    const images = (imagesByKey[String(entry.gbifKey)] ?? [])
+      .filter((img) => !blockedImageIds.has(img.id))
+      .map((img) => ({
+        ...img,
+        // Ham kontrol noktası provenance taşımaz — burada ekleniyor
+      }));
     if (images.length) withImages++;
     else {
       images.push({

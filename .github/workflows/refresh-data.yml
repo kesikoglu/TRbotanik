@@ -27,6 +27,7 @@ on:
       - 'scripts/ingest/wikimedia-images.mjs'
       - 'scripts/ingest/eunis-habitats.mjs'
       - 'scripts/ingest/build-real-dataset.mjs'
+      - 'data/curated/image-blocklist.csv'
       - 'scripts/ingest/lib/**'
       - '.github/workflows/refresh-data.yml'
   workflow_dispatch:
