@@ -140,7 +140,7 @@ export const BASEMAPS: Record<string, BasemapDefinition> = {
  * sessizce bozuk bir harita göstermek yerine çevrimdışı altlığa düşer.
  */
 export function resolveBasemap(id?: string): BasemapDefinition {
-  const requested = id ?? import.meta.env['VITE_BASEMAP'] ?? 'offline';
+  const requested = id ?? import.meta.env['VITE_BASEMAP'] ?? 'esri-imagery';
   const basemap = BASEMAPS[requested];
   if (!basemap) return BASEMAPS['offline']!;
   if (basemap.requiresKey && !maptilerKey) {
