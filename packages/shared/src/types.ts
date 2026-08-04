@@ -105,6 +105,8 @@ export interface TaxonNode {
   status: TaxonStatus;
   /** Ağaçta tanıdıklık için gösterilen birincil Türkçe ad */
   vernacularTr?: string;
+  /** İngilizce arayüzde gösterilen birincil İngilizce ad */
+  vernacularEn?: string;
   /** Bu düğümün altındaki toplamlar — ingest sırasında hesaplanır */
   occurrenceCount: number;
   speciesCount: number;

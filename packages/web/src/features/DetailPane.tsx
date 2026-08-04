@@ -51,13 +51,17 @@ function SpeciesDetail({
   detail: PlantDetail;
   isEndemic: boolean;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const selectSpecies = useAppStore((s) => s.selectSpecies);
   const selectSquare = useAppStore((s) => s.selectSquare);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   const groups = buildAttributeGroups(detail, t as never);
-  const vernacular = detail.vernacularTr.value.map((v) => v.name).join(', ');
+  const vernacularTr = detail.vernacularTr.value.map((v) => v.name).join(', ');
+  const vernacularEn = detail.vernacularEn.value.join(', ');
+  const vernacular = i18n.language.startsWith('en')
+    ? vernacularEn || vernacularTr
+    : vernacularTr || vernacularEn;
 
   return (
     <section className="detail" data-testid="species-detail" aria-label={node.name}>

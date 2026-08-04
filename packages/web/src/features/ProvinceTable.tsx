@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { PlantDetail, TaxonNode } from '@trbotanik/shared';
 import type { SelectionResult } from '../domain/filter';
+import { displayVernacular } from '../domain/vernacular';
 import { useAppStore } from '../state/useAppStore';
 import { placeholderImageUrl } from './placeholderImage';
 
@@ -41,7 +42,7 @@ function imageIndex(id: string): number {
 }
 
 export function ProvinceTable({ province, nodes, details, endemicIds, selection }: Props) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const selectSpecies = useAppStore((s) => s.selectSpecies);
   const closeProvinceTable = useAppStore((s) => s.closeProvinceTable);
   const [exporting, setExporting] = useState(false);
@@ -104,7 +105,7 @@ export function ProvinceTable({ province, nodes, details, endemicIds, selection 
         missing: t('value.missing'),
         openImage: t('provinceTable.openImage'),
         placeholder: t('image.placeholder'),
-      });
+      }, i18n.language);
     } finally {
       setExporting(false);
     }
@@ -178,7 +179,7 @@ export function ProvinceTable({ province, nodes, details, endemicIds, selection 
                       {node.name}
                       {node.authorship && <span className="detail__author"> {node.authorship}</span>}
                     </td>
-                    <td>{node.vernacularTr ?? '—'}</td>
+                    <td>{displayVernacular(node, i18n.language) ?? '—'}</td>
                     <td>{family ?? '—'}</td>
                     <td>{habit ?? t('value.missing')}</td>
                     <td>{isEndemic ? t('value.yes') : t('value.no')}</td>

@@ -1,3 +1,4 @@
+import { displayVernacular } from '../domain/vernacular';
 import type { TableRow } from './ProvinceTable';
 
 interface Labels {
@@ -30,6 +31,7 @@ export async function buildProvinceWorkbook(
   province: string,
   rows: TableRow[],
   labels: Labels,
+  language: string,
 ): Promise<void> {
   const ExcelJS = (await import('exceljs')).default;
   const workbook = new ExcelJS.Workbook();
@@ -51,7 +53,7 @@ export async function buildProvinceWorkbook(
   for (const row of rows) {
     const excelRow = sheet.addRow({
       sci: [row.node.name, row.node.authorship].filter(Boolean).join(' '),
-      vernacular: row.node.vernacularTr ?? '',
+      vernacular: displayVernacular(row.node, language) ?? '',
       family: row.family ?? '',
       habit: row.habit ?? labels.missing,
       endemic: row.isEndemic ? labels.yes : labels.no,

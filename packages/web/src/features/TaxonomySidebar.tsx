@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TaxonNode } from '@trbotanik/shared';
 import { normalizeTr, type SelectionResult } from '../domain/filter';
+import { displayVernacular } from '../domain/vernacular';
 import { useAppStore } from '../state/useAppStore';
 
 interface Props {
@@ -53,7 +54,7 @@ function flatten(
 }
 
 export function TaxonomySidebar({ nodes, rootIds, endemicIds, selection, provinces }: Props) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const filter = useAppStore((s) => s.filter);
   const expandedNodes = useAppStore((s) => s.expandedNodes);
@@ -111,7 +112,9 @@ export function TaxonomySidebar({ nodes, rootIds, endemicIds, selection, provinc
     for (const id of selection.visibleTaxonIds) {
       const node = nodes[id];
       if (!node) continue;
-      if (normalizeTr(`${node.name} ${node.vernacularTr ?? ''}`).includes(needle)) {
+      if (
+        normalizeTr(`${node.name} ${node.vernacularTr ?? ''} ${node.vernacularEn ?? ''}`).includes(needle)
+      ) {
         matched.add(id);
       }
     }
@@ -302,9 +305,10 @@ export function TaxonomySidebar({ nodes, rootIds, endemicIds, selection, provinc
 
                     <span className={`tree__name${isSpecies ? ' tree__name--species' : ''}`}>
                       {node.name}
-                      {node.vernacularTr && (
-                        <span className="tree__vernacular"> · {node.vernacularTr}</span>
-                      )}
+                      {(() => {
+                        const vernacular = displayVernacular(node, i18n.language);
+                        return vernacular && <span className="tree__vernacular"> · {vernacular}</span>;
+                      })()}
                     </span>
 
                     {endemicIds.has(node.id) && (

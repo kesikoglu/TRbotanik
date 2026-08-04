@@ -81,7 +81,7 @@ function matchQuery(nodes: TaxonNode[], query: string): Set<number> | null {
 
   const matched = new Set<number>();
   for (const node of nodes) {
-    const haystack = normalizeTr(`${node.name} ${node.vernacularTr ?? ''}`);
+    const haystack = normalizeTr(`${node.name} ${node.vernacularTr ?? ''} ${node.vernacularEn ?? ''}`);
     if (haystack.includes(needle)) matched.add(node.id);
   }
   return matched;

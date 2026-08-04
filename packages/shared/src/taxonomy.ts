@@ -26,6 +26,7 @@ export interface RawTaxon {
   authorship?: string | null;
   gbifKey?: number | null;
   vernacularTr?: string;
+  vernacularEn?: string;
   isEndemic?: boolean;
 }
 
@@ -69,6 +70,7 @@ export function buildTaxonomyNodes(raw: RawTaxon[]): TaxonNode[] {
       endemicCount: 0,
     };
     if (item.vernacularTr) node.vernacularTr = item.vernacularTr;
+    if (item.vernacularEn) node.vernacularEn = item.vernacularEn;
     nodes.push(node);
 
     for (const child of childrenByParent.get(item.key) ?? []) {

@@ -8,6 +8,7 @@ import maplibregl, {
 import { DAVIS_CODES, davisSquareBounds, type DavisCode, type PlantImage } from '@trbotanik/shared';
 import type { Dataset } from '../data/dataset';
 import { metricValue, type SelectionResult } from '../domain/filter';
+import { displayVernacular } from '../domain/vernacular';
 import { imageIndex, placeholderImageUrl } from '../features/placeholderImage';
 import { useAppStore } from '../state/useAppStore';
 import { getBasemap, sampleTileUrl, type BasemapDefinition } from './basemaps';
@@ -177,7 +178,7 @@ export function MapCanvas({ dataset, selection }: Props) {
   // 'load' geri çağrısı yalnızca BİR KEZ kurulur (bkz. aşağıdaki useEffect([])) — bu
   // yüzden içindeki tıklama işleyicisi `t`'yi doğrudan yakalarsa dil değişiminde
   // güncellenmez. Ref üzerinden en güncel çeviri fonksiyonuna erişiyoruz.
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const tRef = useRef(t);
   useEffect(() => {
     tRef.current = t;
@@ -695,7 +696,7 @@ export function MapCanvas({ dataset, selection }: Props) {
               taxonId: occ.taxonId,
               src: occ.source === 'community' ? 'community' : 'gbif',
               species: node?.name ?? null,
-              vernacular: node?.vernacularTr ?? null,
+              vernacular: node ? displayVernacular(node, i18n.language) ?? null : null,
               province: occ.province,
               year: occ.year,
               elevationM: occ.elevationM,
@@ -711,7 +712,7 @@ export function MapCanvas({ dataset, selection }: Props) {
 
     if (readyRef.current) update();
     else map.once('trbotanik.ready', update);
-  }, [selection, dataset.nodes, dataset.details]);
+  }, [selection, dataset.nodes, dataset.details, i18n.language]);
 
   /* ── Mod değişimi: katmanları yeniden kurmadan görünürlük değiştir ── */
   useEffect(() => {
@@ -812,6 +813,7 @@ export function MapCanvas({ dataset, selection }: Props) {
         dataset.details[selectedSpeciesId]?.images,
         speciesNode?.name ?? null,
       );
+      const speciesVernacular = speciesNode ? displayVernacular(speciesNode, i18n.language) ?? null : null;
 
       source.setData({
         type: 'FeatureCollection',
@@ -820,7 +822,7 @@ export function MapCanvas({ dataset, selection }: Props) {
           properties: {
             id: occ.id,
             species: speciesNode?.name ?? null,
-            vernacular: speciesNode?.vernacularTr ?? null,
+            vernacular: speciesVernacular,
             province: occ.province,
             year: occ.year,
             elevationM: occ.elevationM,
@@ -880,7 +882,7 @@ export function MapCanvas({ dataset, selection }: Props) {
 
     if (readyRef.current) update();
     else map.once('trbotanik.ready', update);
-  }, [selectedSpeciesId, dataset.occurrences, dataset.details, dataset.nodes]);
+  }, [selectedSpeciesId, dataset.occurrences, dataset.details, dataset.nodes, i18n.language]);
 
   return <div ref={containerRef} className="map-canvas" data-testid="map-canvas" />;
 }

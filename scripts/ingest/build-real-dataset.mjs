@@ -230,6 +230,9 @@ async function main() {
       // Türkçe ad taşıyor; GBIF'in kendi vernacularNames'i çok daha seyrek ve
       // denetimsiz (topluluk katkılı) olduğundan yalnızca yedek olarak kullanılır.
       vernacularTr: officialLookup(entry.canonicalName)?.vernacularTr ?? entry.vernacularTr?.[0],
+      // İngilizce ad için küratörlü bir kaynağımız yok; doğrudan GBIF'in
+      // vernacularNames'inden ilk İngilizce adı alıyoruz.
+      vernacularEn: entry.vernacularEn?.[0],
     });
   }
 
