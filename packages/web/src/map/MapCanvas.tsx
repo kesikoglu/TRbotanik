@@ -197,6 +197,7 @@ export function MapCanvas({ dataset, selection, occurrences: allOccurrences }: P
   const metric = useAppStore((s) => s.metric);
   const selectedSquare = useAppStore((s) => s.selectedSquare);
   const selectedSpeciesId = useAppStore((s) => s.selectedSpeciesId);
+  const communityOnly = useAppStore((s) => s.filter.communityOnly);
   const selectSquare = useAppStore((s) => s.selectSquare);
   const selectSpecies = useAppStore((s) => s.selectSpecies);
   const basemapId = useAppStore((s) => s.basemapId);
@@ -848,8 +849,14 @@ export function MapCanvas({ dataset, selection, occurrences: allOccurrences }: P
 
       // Aktif taksonomi/faset filtresinden BAĞIMSIZ olarak, veri setinin tamamından bu
       // taksonun kayıtlarını alıyoruz — kullanıcı dar bir filtre uygulasa bile "bu tür
-      // nerede?" sorusunun yanıtı her zaman eksiksiz olsun.
-      const occurrences = allOccurrences.filter((o) => o.taxonId === selectedSpeciesId);
+      // nerede?" sorusunun yanıtı her zaman eksiksiz olsun. TEK İSTİSNA "topluluk
+      // katkıları" filtresidir: bu filtrenin AMACI zaten sadece topluluk kayıtlarını
+      // göstermektir, dolayısıyla burada uygulanmazsa binlerce GBIF noktası arasında
+      // tek bir topluluk noktası kaybolur (bkz. kullanıcı geri bildirimi: "filtre
+      // topluluk katkı olunca sadece onlar gözüksün").
+      const occurrences = allOccurrences.filter(
+        (o) => o.taxonId === selectedSpeciesId && (!communityOnly || o.source === 'community'),
+      );
       // Katmandaki her nokta aynı türe ait; adı ve görseli popup'ta göstermek için bir kez alınır.
       const speciesNode = dataset.nodes[selectedSpeciesId];
       const speciesImageUrl = firstImageUrl(
@@ -928,7 +935,7 @@ export function MapCanvas({ dataset, selection, occurrences: allOccurrences }: P
 
     if (readyRef.current) update();
     else map.once('trbotanik.ready', update);
-  }, [selectedSpeciesId, allOccurrences, dataset.details, dataset.nodes, i18n.language]);
+  }, [selectedSpeciesId, communityOnly, allOccurrences, dataset.details, dataset.nodes, i18n.language]);
 
   return <div ref={containerRef} className="map-canvas" data-testid="map-canvas" />;
 }
