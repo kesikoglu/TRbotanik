@@ -22,6 +22,7 @@ on:
       - claude/turkiye-botanik-haritasi-di1550
     paths:
       - 'scripts/ingest/gbif-taxonomy.mjs'
+      - 'scripts/ingest/gbif-synonyms.mjs'
       - 'scripts/ingest/gbif-occurrences.mjs'
       - 'scripts/ingest/inaturalist-images.mjs'
       - 'scripts/ingest/wikimedia-images.mjs'
@@ -90,6 +91,12 @@ jobs:
           # Duman testi (150 tür, run 30430435091) uçtan uca başarıyla tamamlandı —
           # sınır kaldırıldı. Boş değer = tüm Türkiye florası (13.319 tür keşfedildi).
           GBIF_SPECIES_LIMIT: ${{ github.event.inputs.species_limit }}
+
+      - name: Eş anlamlı adları çek (GBIF)
+        # Kendi kontrol noktasını (data/raw/gbif/synonyms.json) tutar ve
+        # species.json'a dokunmaz; önbellekten geri yüklendiğinde yalnızca yeni
+        # taksonlar sorgulanır.
+        run: npm run data:gbif-synonyms
 
       - name: Yayılış kayıtlarını çek (GBIF)
         run: npm run data:gbif-occurrences
