@@ -29,6 +29,10 @@
   --c-warn-bg: #4a3a12;
   --c-warn-border: #a9821f;
   --c-warn-text: #fde68a;
+  /* Onay bekleyen hesap/kayıt vurgusu — topluluk katkısı rengiyle kasıtlı olarak
+     aynı: ikisi de "henüz doğrulanmamış" anlamına gelir. */
+  --c-warn: #fbbf24;
+  --c-danger: #f87171;
   --c-endemic: #f0abfc;
   --c-community: #fbbf24;
 

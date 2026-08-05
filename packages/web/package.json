@@ -10,6 +10,7 @@
     "build:single": "vite build --config vite.artifact.config.ts"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.112.1",
     "@trbotanik/shared": "*",
     "exceljs": "^4.4.0",
     "i18next": "^25.0.0",

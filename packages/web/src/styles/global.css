@@ -1085,6 +1085,277 @@ button {
   white-space: nowrap;
 }
 
+/* ── Formlar ──────────────────────────────────────────────────────── */
+/* Uygulamada bu noktaya kadar hiç form yoktu; giriş ekranı, gözlem girişi ve
+   yönetici paneli aynı yapı taşlarını paylaşsın diye ortak sınıflar burada. */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.field__label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--c-text-muted);
+  letter-spacing: 0.02em;
+}
+
+/* Zorunlu alanı yıldızla işaretle — ekran okuyucular için aria-required ayrıca verilir. */
+.field__label--required::after {
+  content: ' *';
+  color: var(--c-accent);
+}
+
+.field__hint {
+  font-size: 11.5px;
+  color: var(--c-text-faint);
+  line-height: 1.4;
+}
+
+.field__error {
+  font-size: 11.5px;
+  color: var(--c-danger, #f87171);
+}
+
+.input,
+.textarea {
+  width: 100%;
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--c-bg);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-md);
+  color: var(--c-text);
+  font: inherit;
+  /* 16px altındaki yazı tipi boyutu iOS Safari'de odaklanınca sayfayı
+     yakınlaştırır — saha girişinde bu çok rahatsız edici olduğu için sabitlendi. */
+  font-size: 16px;
+}
+
+.textarea {
+  min-height: 76px;
+  resize: vertical;
+}
+
+.input:disabled,
+.textarea:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.input--invalid {
+  border-color: var(--c-danger, #f87171);
+}
+
+.input::placeholder,
+.textarea::placeholder {
+  color: var(--c-text-faint);
+}
+
+.button {
+  padding: var(--sp-2) var(--sp-4);
+  background: var(--c-surface-2);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-md);
+  color: var(--c-text);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.button:hover:not(:disabled) {
+  background: var(--c-surface-3);
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.button--primary {
+  background: var(--c-accent);
+  border-color: var(--c-accent);
+  color: var(--c-accent-ink);
+}
+
+.button--primary:hover:not(:disabled) {
+  filter: brightness(1.08);
+  background: var(--c-accent);
+}
+
+.button--block {
+  width: 100%;
+}
+
+.button--danger {
+  border-color: var(--c-danger, #f87171);
+  color: var(--c-danger, #f87171);
+}
+
+.form__row {
+  display: flex;
+  gap: var(--sp-2);
+}
+
+.form__row > * {
+  flex: 1;
+  min-width: 0;
+}
+
+.form__message {
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-md);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.form__message--error {
+  background: rgba(248, 113, 113, 0.12);
+  border: 1px solid rgba(248, 113, 113, 0.4);
+  color: #fca5a5;
+}
+
+.form__message--success {
+  background: rgba(110, 231, 168, 0.1);
+  border: 1px solid rgba(110, 231, 168, 0.35);
+  color: var(--c-accent);
+}
+
+.form__message--info {
+  background: var(--c-surface-2);
+  border: 1px solid var(--c-border);
+  color: var(--c-text-muted);
+}
+
+/* ── Kip (modal) kabuğu ───────────────────────────────────────────── */
+/* İl tablosundaki örüntünün yeniden kullanılabilir hâli. */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-4);
+  background: rgba(6, 10, 8, 0.72);
+  overflow-y: auto;
+}
+
+.modal {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 460px;
+  max-height: 92vh;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border-strong);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-panel);
+  overflow: hidden;
+}
+
+.modal--wide {
+  max-width: 900px;
+}
+
+.modal__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: var(--sp-4);
+  border-bottom: 1px solid var(--c-border);
+}
+
+.modal__title {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 19px;
+  font-weight: 600;
+}
+
+.modal__subtitle {
+  margin: 2px 0 0;
+  font-size: 13px;
+  color: var(--c-text-muted);
+  line-height: 1.45;
+}
+
+.modal__body {
+  padding: var(--sp-4);
+  overflow-y: auto;
+}
+
+.modal__tabs {
+  display: flex;
+  gap: var(--sp-1);
+  padding: 0 var(--sp-4);
+  border-bottom: 1px solid var(--c-border);
+}
+
+.modal__tab {
+  padding: var(--sp-2) var(--sp-3);
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: var(--c-text-muted);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.modal__tab--active {
+  border-bottom-color: var(--c-accent);
+  color: var(--c-text);
+}
+
+/* ── Üst çubuktaki hesap düğmesi ──────────────────────────────────── */
+
+.account-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: var(--c-surface-2);
+  border: 1px solid var(--c-border);
+  border-radius: 999px;
+  color: var(--c-text);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.account-button:hover {
+  background: var(--c-surface-3);
+}
+
+/* Onay bekleyen hesap görsel olarak ayrışsın — kullanıcı neden veri
+   giremediğini düğmeye tıklamadan anlasın. */
+.account-button--pending {
+  border-color: var(--c-warn, #fbbf24);
+  color: var(--c-warn, #fbbf24);
+}
+
+.account-button__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--c-accent);
+  flex-shrink: 0;
+}
+
+.account-button--pending .account-button__dot {
+  background: var(--c-warn, #fbbf24);
+}
+
 /* ── Dar ekran ────────────────────────────────────────────────────── */
 
 @media (max-width: 1100px) {

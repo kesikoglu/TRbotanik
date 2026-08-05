@@ -11,6 +11,10 @@ import { AttributionBar } from './map/AttributionBar';
 import { TaxonomySidebar } from './features/TaxonomySidebar';
 import { DetailPane } from './features/DetailPane';
 import { ProvinceTable } from './features/ProvinceTable';
+import { AuthPanel } from './features/AuthPanel';
+import { AccountPanel } from './features/AccountPanel';
+import { isBackendConfigured } from './backend/config';
+import { useSession, type SessionState } from './backend/useSession';
 import { setLanguage, SUPPORTED_LANGUAGES, type Language } from './i18n';
 import type { Dataset } from './data/dataset';
 
@@ -68,6 +72,7 @@ function Workspace({ dataset }: { dataset: Dataset }) {
 
   const detailOpen = selectedSpeciesId !== null || selectedSquare !== null;
   const familyCount = dataset.byRank.FAMILY.length;
+  const session = useSession();
 
   return (
     <div className="app">
@@ -101,6 +106,8 @@ function Workspace({ dataset }: { dataset: Dataset }) {
             </button>
           ))}
         </div>
+
+        <AccountButton session={session} />
       </header>
 
       {dataset.manifest.mode === 'fixture' && (
@@ -168,5 +175,54 @@ function Stat({ value, label }: { value: number | string; label: string }) {
       </span>
       <span className="stat__label">{label}</span>
     </div>
+  );
+}
+
+/**
+ * Üst çubuktaki hesap düğmesi ve açtığı kipler.
+ *
+ * Arka uç yapılandırılmamışsa HİÇBİR ŞEY göstermez — uygulama o hâlde salt-okunur
+ * bir harita olarak eksiksiz çalışmaya devam eder (e2e testleri ve çevrimdışı
+ * gösterimler bu yola dayanır).
+ */
+function AccountButton({ session }: { session: SessionState }) {
+  const { t } = useTranslation();
+  const [panel, setPanel] = useState<'none' | 'auth' | 'account'>('none');
+
+  if (!isBackendConfigured()) return null;
+  // İlk oturum sorgusu sürerken düğmeyi çizmiyoruz: aksi hâlde giriş yapmış bir
+  // kullanıcıya bir an "Giriş yap" yazısı görünüp hemen değişirdi.
+  if (session.loading) return null;
+
+  const user = session.user;
+  const pending = Boolean(user) && user?.profile?.status !== 'approved';
+
+  return (
+    <>
+      <button
+        type="button"
+        className={`account-button${pending ? ' account-button--pending' : ''}`}
+        onClick={() => setPanel(user ? 'account' : 'auth')}
+        data-testid="account-button"
+      >
+        {user && <span className="account-button__dot" aria-hidden="true" />}
+        {user ? user.profile?.display_name || user.email : t('auth.signIn')}
+      </button>
+
+      {panel === 'auth' && (
+        <AuthPanel
+          user={user}
+          onClose={() => setPanel('none')}
+          onSignedIn={() => void session.refresh()}
+        />
+      )}
+      {panel === 'account' && user && (
+        <AccountPanel
+          user={user}
+          onClose={() => setPanel('none')}
+          onChanged={() => void session.refresh()}
+        />
+      )}
+    </>
   );
 }

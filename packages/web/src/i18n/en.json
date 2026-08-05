@@ -219,5 +219,40 @@
     "switch": "Dil",
     "tr": "Türkçe",
     "en": "English"
+  },
+  "auth": {
+    "signIn": "Sign in",
+    "signUp": "Sign up",
+    "signOut": "Sign out",
+    "account": "My account",
+    "subtitle": "An account is required to add plants you observe in the field.",
+    "email": "Email",
+    "password": "Password",
+    "passwordHint": "At least 6 characters.",
+    "displayName": "Full name",
+    "displayNameHint": "This name appears on the records you contribute.",
+    "institution": "Institution (optional)",
+    "working": "Working…",
+    "forgotPassword": "Forgot password",
+    "backToSignIn": "Back to sign in",
+    "resetTitle": "Reset password",
+    "resetSent": "A password reset link has been sent to your email.",
+    "confirmEmailSent": "A confirmation link has been sent to your email. You can sign in after confirming.",
+    "signedUpPending": "Your account has been created. Administrator approval is required before you can submit data.",
+    "approvalNotice": "After your account is created, you cannot submit data until an administrator approves it. This protects data reliability.",
+    "pendingNotice": "Your account is awaiting approval. You can submit observations once an administrator approves it.",
+    "suspendedNotice": "Your account has been suspended. Contact an administrator for details.",
+    "profileSaved": "Profile updated.",
+    "saveProfile": "Save",
+    "role": {
+      "admin": "Administrator",
+      "curator": "Curator",
+      "contributor": "Contributor"
+    },
+    "status": {
+      "pending": "Awaiting approval",
+      "approved": "Approved",
+      "suspended": "Suspended"
+    }
   }
 }

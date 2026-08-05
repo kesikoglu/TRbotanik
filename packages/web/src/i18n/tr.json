@@ -219,5 +219,40 @@
     "switch": "Language",
     "tr": "Türkçe",
     "en": "English"
+  },
+  "auth": {
+    "signIn": "Giriş yap",
+    "signUp": "Kayıt ol",
+    "signOut": "Çıkış yap",
+    "account": "Hesabım",
+    "subtitle": "Arazide gördüğünüz bitkileri sisteme eklemek için hesap gerekir.",
+    "email": "E-posta",
+    "password": "Şifre",
+    "passwordHint": "En az 6 karakter.",
+    "displayName": "Ad soyad",
+    "displayNameHint": "Katkıda bulunduğunuz kayıtlarda bu ad görünür.",
+    "institution": "Kurum (isteğe bağlı)",
+    "working": "İşleniyor…",
+    "forgotPassword": "Şifremi unuttum",
+    "backToSignIn": "Girişe dön",
+    "resetTitle": "Şifre sıfırla",
+    "resetSent": "Şifre sıfırlama bağlantısı e-posta adresinize gönderildi.",
+    "confirmEmailSent": "Doğrulama bağlantısı e-posta adresinize gönderildi. Onayladıktan sonra giriş yapabilirsiniz.",
+    "signedUpPending": "Hesabınız oluşturuldu. Veri girebilmek için yönetici onayı gerekiyor.",
+    "approvalNotice": "Hesabınız oluşturulduktan sonra bir yönetici onaylayana kadar veri giremezsiniz. Bu, veri güvenilirliğini korumak içindir.",
+    "pendingNotice": "Hesabınız onay bekliyor. Yönetici onayladıktan sonra gözlem girebilirsiniz.",
+    "suspendedNotice": "Hesabınız askıya alınmış. Ayrıntı için yöneticiyle iletişime geçin.",
+    "profileSaved": "Profil güncellendi.",
+    "saveProfile": "Kaydet",
+    "role": {
+      "admin": "Yönetici",
+      "curator": "Küratör",
+      "contributor": "Katkıda bulunan"
+    },
+    "status": {
+      "pending": "Onay bekliyor",
+      "approved": "Onaylı",
+      "suspended": "Askıda"
+    }
   }
 }
