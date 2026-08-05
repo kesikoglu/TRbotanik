@@ -80,7 +80,8 @@
     "fieldSource": "Kaynak",
     "clusterTitle": "Kayıt kümesi",
     "clusterCount": "{{count}} kayıt bu bölgede gruplandı",
-    "clusterHint": "Tekil kayıtları görmek için tekrar tıklayıp yakınlaşın"
+    "clusterHint": "Tekil kayıtları görmek için tekrar tıklayıp yakınlaşın",
+    "fieldContributor": "Ekleyen"
   },
   "basisOfRecord": {
     "PRESERVED_SPECIMEN": "Herbaryum örneği",

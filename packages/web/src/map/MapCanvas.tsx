@@ -5,7 +5,13 @@ import maplibregl, {
   type PropertyValueSpecification,
   type StyleSpecification,
 } from 'maplibre-gl';
-import { DAVIS_CODES, davisSquareBounds, type DavisCode, type PlantImage } from '@trbotanik/shared';
+import {
+  DAVIS_CODES,
+  davisSquareBounds,
+  type DavisCode,
+  type OccurrenceRecord,
+  type PlantImage,
+} from '@trbotanik/shared';
 import type { Dataset } from '../data/dataset';
 import { metricValue, type SelectionResult } from '../domain/filter';
 import { displayVernacular } from '../domain/vernacular';
@@ -49,6 +55,7 @@ function occurrencePopupHtml(
   const basisOfRecord = props['basisOfRecord'] as string | undefined;
   const source = props['source'] as string | undefined;
   const imageUrl = props['imageUrl'] as string | null | undefined;
+  const contributor = props['contributor'] as string | null | undefined;
 
   const missing = t('value.missing');
   const rows: Array<[string, string]> = [
@@ -61,6 +68,12 @@ function occurrencePopupHtml(
     ],
     [t('popup.fieldSource'), t(source === 'community' ? 'legend.pointsCommunity' : 'legend.pointsGbif')],
   ];
+
+  // Topluluk kaydının kimden geldiği görünmeli: katkı, kaynağıyla birlikte
+  // anlam kazanır ve katkıda bulunana atıf verilmesi gerekir.
+  if (source === 'community' && contributor) {
+    rows.push([t('popup.fieldContributor'), escapeHtml(contributor)]);
+  }
 
   // Bu katmandaki her nokta AYNI türe ait (seçili tür), ama kullanıcı detay
   // panelini kaydırmış/unutmuş olabilir — bitki adı popup'ta da tekrarlanır.
@@ -120,6 +133,14 @@ const L_SPECIES_HL = 'species-highlight-points';
 interface Props {
   dataset: Dataset;
   selection: SelectionResult;
+  /**
+   * Referans veri + onaylı topluluk gözlemlerinin birleşimi.
+   *
+   * `dataset.occurrences` YERİNE bu kullanılır: seçili türün vurgulanan noktaları
+   * aktif filtreden bağımsız olarak tüm kayıtlardan gelir ve topluluk katkıları
+   * da bu bütüne dahildir.
+   */
+  occurrences: OccurrenceRecord[];
 }
 
 function davisFillOpacity(drawLandFill: boolean): PropertyValueSpecification<number> {
@@ -151,7 +172,7 @@ function davisFillOpacity(drawLandFill: boolean): PropertyValueSpecification<num
  *   kaynağı/katmanı sökülüp yeniden takılır (bkz. `applyBasemap`). Bu, choropleth
  *   feature-state'lerini ve etkileşim dinleyicilerini korur.
  */
-export function MapCanvas({ dataset, selection }: Props) {
+export function MapCanvas({ dataset, selection, occurrences: allOccurrences }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const readyRef = useRef(false);
@@ -448,7 +469,15 @@ export function MapCanvas({ dataset, selection }: Props) {
         type: 'circle',
         source: SRC_SPECIES,
         paint: {
-          'circle-color': MAP_COLORS.speciesHighlight,
+          // Topluluk katkıları bu katmanda da AYRI renkte çizilir. Aksi hâlde
+          // bir tür seçildiğinde doğrulanmamış arazi kaydı, küratörlü referans
+          // kayıtlarla aynı görsel ağırlığa kavuşur ve ayrım kaybolurdu.
+          'circle-color': [
+            'match',
+            ['get', 'source'],
+            'community', MAP_COLORS.pointCommunity,
+            MAP_COLORS.speciesHighlight,
+          ],
           'circle-radius': ['interpolate', ['linear'], ['zoom'], 4, 4.5, 10, 9],
           'circle-opacity': 0.95,
           'circle-stroke-width': 1.5,
@@ -702,6 +731,7 @@ export function MapCanvas({ dataset, selection }: Props) {
               elevationM: occ.elevationM,
               basisOfRecord: occ.basisOfRecord,
               source: occ.source,
+              contributor: occ.contributor?.displayName ?? null,
               imageUrl: firstImageUrl(dataset.details[occ.taxonId]?.images, node?.name ?? null),
             },
             geometry: { type: 'Point' as const, coordinates: [occ.lon, occ.lat] },
@@ -806,7 +836,7 @@ export function MapCanvas({ dataset, selection }: Props) {
       // Aktif taksonomi/faset filtresinden BAĞIMSIZ olarak, veri setinin tamamından bu
       // taksonun kayıtlarını alıyoruz — kullanıcı dar bir filtre uygulasa bile "bu tür
       // nerede?" sorusunun yanıtı her zaman eksiksiz olsun.
-      const occurrences = dataset.occurrences.filter((o) => o.taxonId === selectedSpeciesId);
+      const occurrences = allOccurrences.filter((o) => o.taxonId === selectedSpeciesId);
       // Katmandaki her nokta aynı türe ait; adı ve görseli popup'ta göstermek için bir kez alınır.
       const speciesNode = dataset.nodes[selectedSpeciesId];
       const speciesImageUrl = firstImageUrl(
@@ -828,6 +858,7 @@ export function MapCanvas({ dataset, selection }: Props) {
             elevationM: occ.elevationM,
             basisOfRecord: occ.basisOfRecord,
             source: occ.source,
+            contributor: occ.contributor?.displayName ?? null,
             imageUrl: speciesImageUrl,
           },
           geometry: { type: 'Point' as const, coordinates: [occ.lon, occ.lat] },
@@ -882,7 +913,7 @@ export function MapCanvas({ dataset, selection }: Props) {
 
     if (readyRef.current) update();
     else map.once('trbotanik.ready', update);
-  }, [selectedSpeciesId, dataset.occurrences, dataset.details, dataset.nodes, i18n.language]);
+  }, [selectedSpeciesId, allOccurrences, dataset.details, dataset.nodes, i18n.language]);
 
   return <div ref={containerRef} className="map-canvas" data-testid="map-canvas" />;
 }

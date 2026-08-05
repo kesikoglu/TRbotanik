@@ -20,6 +20,7 @@ import { ObservationReview } from './features/ObservationReview';
 import { canContribute, type SessionUser } from './backend/auth';
 import { isBackendConfigured } from './backend/config';
 import { useSession, type SessionState } from './backend/useSession';
+import { useCommunityOccurrences } from './backend/useCommunityOccurrences';
 import { setLanguage, SUPPORTED_LANGUAGES, type Language } from './i18n';
 import type { Dataset } from './data/dataset';
 
@@ -70,9 +71,20 @@ function Workspace({ dataset }: { dataset: Dataset }) {
     return [...set].sort((a, b) => a.localeCompare(b, 'tr'));
   }, [dataset.occurrences]);
 
+  // Onaylı topluluk gözlemleri referans veriye EKLENİR, onun yerine geçmez.
+  // Haritada `source: 'community'` sayesinde ayrı renkte çizilirler.
+  const community = useCommunityOccurrences(dataset.nodes);
+  const occurrences = useMemo(
+    () =>
+      community.occurrences.length > 0
+        ? [...dataset.occurrences, ...community.occurrences]
+        : dataset.occurrences,
+    [dataset.occurrences, community.occurrences],
+  );
+
   const selection = useMemo(
-    () => applyFilter(dataset.nodes, dataset.occurrences, endemicIds, filter),
-    [dataset.nodes, dataset.occurrences, endemicIds, filter],
+    () => applyFilter(dataset.nodes, occurrences, endemicIds, filter),
+    [dataset.nodes, occurrences, endemicIds, filter],
   );
 
   const detailOpen = selectedSpeciesId !== null || selectedSquare !== null;
@@ -136,7 +148,7 @@ function Workspace({ dataset }: { dataset: Dataset }) {
         />
 
         <div className="map-pane">
-          <MapCanvas dataset={dataset} selection={selection} />
+          <MapCanvas dataset={dataset} selection={selection} occurrences={occurrences} />
 
           <div className="map-overlay map-overlay--top-left map-overlay--stack">
             <MapControls />

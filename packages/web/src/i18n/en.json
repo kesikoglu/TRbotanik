@@ -80,7 +80,8 @@
     "fieldSource": "Source",
     "clusterTitle": "Record cluster",
     "clusterCount": "{{count}} records grouped in this area",
-    "clusterHint": "Click again to zoom in and see individual records"
+    "clusterHint": "Click again to zoom in and see individual records",
+    "fieldContributor": "Contributor"
   },
   "basisOfRecord": {
     "PRESERVED_SPECIMEN": "Herbarium specimen",
