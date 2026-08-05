@@ -253,6 +253,8 @@
       "pending": "Awaiting approval",
       "approved": "Approved",
       "suspended": "Suspended"
-    }
+    },
+    "welcomeTitle": "Welcome",
+    "gotIt": "Got it"
   }
 }

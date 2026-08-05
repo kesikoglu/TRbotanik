@@ -253,6 +253,8 @@
       "pending": "Onay bekliyor",
       "approved": "Onaylı",
       "suspended": "Askıda"
-    }
+    },
+    "welcomeTitle": "Hoş geldiniz",
+    "gotIt": "Anladım"
   }
 }

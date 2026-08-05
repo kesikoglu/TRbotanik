@@ -8,7 +8,14 @@ import {
   type SessionUser,
 } from '../backend/auth';
 
-type Mode = 'signin' | 'signup' | 'reset';
+/**
+ * `done`: kayıt tamamlandı ve kullanıcı ZATEN giriş yapmış durumda.
+ *
+ * E-posta doğrulaması kapalıyken Supabase kayıt anında oturum döndürür. Bu durumda
+ * kullanıcıyı "giriş yap" sekmesine geri atmak yanlış olurdu (zaten girmiş); bunun
+ * yerine hesabının onay beklediğini anlatan bir kapanış ekranı gösterilir.
+ */
+type Mode = 'signin' | 'signup' | 'reset' | 'done';
 
 interface Props {
   onClose: () => void;
@@ -66,10 +73,16 @@ export function AuthPanel({ onClose, onSignedIn }: Props) {
           displayName,
           institution,
         });
-        setNotice(
-          needsEmailConfirmation ? t('auth.confirmEmailSent') : t('auth.signedUpPending'),
-        );
-        setMode('signin');
+        if (needsEmailConfirmation) {
+          setNotice(t('auth.confirmEmailSent'));
+          setMode('signin');
+        } else {
+          // Doğrulama kapalı: kullanıcı bu noktada zaten giriş yapmış durumda.
+          // Üst çubuğun adını göstermesi için oturumu tazeliyor, sonra hesabın
+          // onay beklediğini anlatan kapanış ekranına geçiyoruz.
+          onSignedIn();
+          setMode('done');
+        }
       } else {
         await requestPasswordReset(email);
         setNotice(t('auth.resetSent'));
@@ -83,7 +96,13 @@ export function AuthPanel({ onClose, onSignedIn }: Props) {
   }
 
   const title =
-    mode === 'signin' ? t('auth.signIn') : mode === 'signup' ? t('auth.signUp') : t('auth.resetTitle');
+    mode === 'signin'
+      ? t('auth.signIn')
+      : mode === 'signup'
+        ? t('auth.signUp')
+        : mode === 'done'
+          ? t('auth.welcomeTitle')
+          : t('auth.resetTitle');
 
   return (
     <div
@@ -111,7 +130,7 @@ export function AuthPanel({ onClose, onSignedIn }: Props) {
           </button>
         </header>
 
-        {mode !== 'reset' && (
+        {mode !== 'reset' && mode !== 'done' && (
           <div className="modal__tabs" role="tablist">
             <button
               type="button"
@@ -137,6 +156,20 @@ export function AuthPanel({ onClose, onSignedIn }: Props) {
         )}
 
         <div className="modal__body">
+          {mode === 'done' ? (
+            <div className="form" data-testid="auth-done">
+              <p className="form__message form__message--success">{t('auth.signedUpPending')}</p>
+              <p className="form__message form__message--info">{t('auth.pendingNotice')}</p>
+              <button
+                type="button"
+                className="button button--primary button--block"
+                onClick={onClose}
+                data-testid="auth-done-close"
+              >
+                {t('auth.gotIt')}
+              </button>
+            </div>
+          ) : (
           <form className="form" onSubmit={handleSubmit}>
             {error && (
               <p className="form__message form__message--error" role="alert" data-testid="auth-error">
@@ -255,6 +288,7 @@ export function AuthPanel({ onClose, onSignedIn }: Props) {
               </button>
             )}
           </form>
+          )}
         </div>
       </div>
     </div>
