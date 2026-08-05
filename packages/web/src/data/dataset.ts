@@ -1,10 +1,12 @@
 import type { FeatureCollection } from 'geojson';
-import type {
-  DataManifest,
-  OccurrenceRecord,
-  PlantDetail,
-  TaxonNode,
-  TaxonRank,
+import {
+  unpackDetails,
+  type DataManifest,
+  type OccurrenceRecord,
+  type PackedDetailsFile,
+  type PlantDetail,
+  type TaxonNode,
+  type TaxonRank,
 } from '@trbotanik/shared';
 
 /**
@@ -53,7 +55,7 @@ export async function loadDataset(signal?: AbortSignal): Promise<Dataset> {
     fetchJson<DataManifest>('manifest.json', signal),
     fetchJson<TaxonomyFile>('taxonomy.json', signal),
     fetchJson<OccurrenceRecord[]>('occurrences.json', signal),
-    fetchJson<Record<number, PlantDetail>>('details.json', signal),
+    fetchJson<PackedDetailsFile | Record<number, PlantDetail>>('details.json', signal),
     fetchJson<FeatureCollection>('geo/davis-grid.geojson', signal),
     fetchJson<FeatureCollection>('geo/turkiye.geojson', signal),
   ]);
@@ -64,7 +66,9 @@ export async function loadDataset(signal?: AbortSignal): Promise<Dataset> {
     byRank: taxonomy.byRank,
     rootIds: taxonomy.rootIds,
     occurrences,
-    details,
+    // Gerçek anlık görüntü kaynak-tekilleştirilmiş biçimde gelir; fixture verisi
+    // düz biçimdedir — `unpackDetails` ikisini de kabul eder.
+    details: unpackDetails(details),
     davisGrid,
     turkiye,
   };

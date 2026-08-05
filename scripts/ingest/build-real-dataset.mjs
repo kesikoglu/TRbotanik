@@ -20,7 +20,13 @@ import { existsSync } from 'node:fs';
 import { readFile, writeFile, mkdir, readdir } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { buildTaxonomyNodes, indexByRank, normalizeProvinceName, rollUpCounts } from '@trbotanik/shared';
+import {
+  buildTaxonomyNodes,
+  indexByRank,
+  normalizeProvinceName,
+  packDetails,
+  rollUpCounts,
+} from '@trbotanik/shared';
 import { speciesKey } from './nuhungemisiParse.mjs';
 import { buildWcvpIndex, parseWcvpCsv } from './wcvpParse.mjs';
 import { dedupeSynonyms } from './gbif-synonyms.mjs';
@@ -529,7 +535,9 @@ async function main() {
   await mkdir(SNAPSHOT_DIR, { recursive: true });
   await writeFile(resolve(SNAPSHOT_DIR, 'taxonomy.json'), JSON.stringify(taxonomy));
   await writeFile(resolve(SNAPSHOT_DIR, 'occurrences.json'), JSON.stringify(occurrences));
-  await writeFile(resolve(SNAPSHOT_DIR, 'details.json'), JSON.stringify(details));
+  // Kaynak nesneleri tekilleştirilerek yazılır (bkz. packDetails) — dosyanın
+  // %44'ü tekrar eden provenance'tı; okuyan taraf unpackDetails ile açar.
+  await writeFile(resolve(SNAPSHOT_DIR, 'details.json'), JSON.stringify(packDetails(details)));
   await writeFile(resolve(SNAPSHOT_DIR, 'manifest.json'), JSON.stringify(manifest, null, 2));
 
   console.log('✓ Gerçek veri anlık görüntüsü yazıldı: data/gbif-snapshot/');
