@@ -26,6 +26,10 @@ grant update on public.profiles to authenticated;
 grant execute on all functions in schema public to anon, authenticated;
 grant usage on schema auth to anon, authenticated;
 grant select on auth.users to anon, authenticated;
+grant usage on schema storage to anon, authenticated;
+grant select, insert, delete on storage.objects to authenticated;
+grant select on storage.objects to anon;
+grant execute on all functions in schema storage to anon, authenticated;
 
 -- --- Test kullanıcıları ----------------------------------------------------
 delete from public.observations;
@@ -183,7 +187,40 @@ begin
   select count(*) into n from public.observations where id = obs_id and notes is null;
   assert n = 1, 'Sahibi onaylanmış kaydı değiştirebildi — denetim sonrası bütünlük yok!';
 
+  -- =========================================================================
+  -- 11) Fotoğraf deposu: kullanıcı YALNIZCA kendi klasörüne yükleyebilir
+  -- =========================================================================
+  -- Yol düzeni {kullanıcı_id}/{gözlem_id}/{dosya}; ilk segment sahibi belirler.
+  set local role authenticated;
+  perform set_config('app.current_user_id', ok_id::text, true);
+
+  -- Kendi klasörü: başarılı olmalı
+  insert into storage.objects (bucket_id, name)
+  values ('observation-photos', ok_id::text || '/' || obs_id::text || '/foto.jpg');
+
+  -- Başkasının klasörü: reddedilmeli
+  failed := false;
+  begin
+    insert into storage.objects (bucket_id, name)
+    values ('observation-photos', curator_id::text || '/calinti/foto.jpg');
+  exception when insufficient_privilege then failed := true;
+  end;
+  assert failed, 'Kullanıcı başkasının fotoğraf klasörüne yazabildi — depolama açığı!';
+  reset role;
+
+  -- Onay bekleyen kullanıcı hiç yükleyememeli
+  set local role authenticated;
+  perform set_config('app.current_user_id', pending_id::text, true);
+  failed := false;
+  begin
+    insert into storage.objects (bucket_id, name)
+    values ('observation-photos', pending_id::text || '/x/foto.jpg');
+  exception when insufficient_privilege then failed := true;
+  end;
+  assert failed, 'Onay bekleyen kullanıcı fotoğraf yükleyebildi — depolama açığı!';
+  reset role;
+
   -- `warning` seviyesi kasıtlı: yukarıdaki `client_min_messages = warning`
   -- ayarı notice'ları gizler, bu satırın çıktıda GÖRÜNMESİ gerekir.
-  raise warning 'TÜM RLS TESTLERİ GEÇTİ (10/10)';
+  raise warning 'TÜM RLS TESTLERİ GEÇTİ (11/11)';
 end $$;

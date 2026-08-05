@@ -23,3 +23,40 @@ stable
 as $$
   select nullif(current_setting('app.current_user_id', true), '')::uuid;
 $$;
+
+-- --- storage şemasının taklidi ---------------------------------------------
+-- Üretimde storage-api tarafından sağlanır. 0002_storage.sql'in yazdığı kova
+-- kaydı ve okuduğu `storage.foldername()` yardımcısı burada karşılanır.
+create schema if not exists storage;
+
+create table if not exists storage.buckets (
+  id                 text primary key,
+  name               text not null,
+  public             boolean not null default false,
+  file_size_limit    bigint,
+  allowed_mime_types text[]
+);
+
+create table if not exists storage.objects (
+  id        uuid primary key default gen_random_uuid(),
+  bucket_id text references storage.buckets,
+  name      text not null,
+  owner     uuid
+);
+
+alter table storage.objects enable row level security;
+
+-- Gerçek uygulamayla aynı davranış: yolu '/' ile böler, SON parçayı (dosya adı)
+-- atar ve klasör segmentlerini dizi olarak döner.
+create or replace function storage.foldername(name text)
+returns text[]
+language plpgsql
+immutable
+as $$
+declare
+  parts text[];
+begin
+  parts := string_to_array(name, '/');
+  return parts[1:array_length(parts, 1) - 1];
+end;
+$$;
