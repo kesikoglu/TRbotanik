@@ -256,5 +256,21 @@
     },
     "welcomeTitle": "Welcome",
     "gotIt": "Got it"
+  },
+  "admin": {
+    "open": "Admin panel",
+    "title": "User management",
+    "pendingCount": "{{count}} account(s) awaiting approval",
+    "noPending": "No accounts awaiting approval.",
+    "noUsers": "No registered users yet.",
+    "colName": "Full name",
+    "colInstitution": "Institution",
+    "colRole": "Role",
+    "colStatus": "Status",
+    "colActions": "Action",
+    "approve": "Approve",
+    "suspend": "Suspend",
+    "reinstate": "Reinstate",
+    "you": "you"
   }
 }

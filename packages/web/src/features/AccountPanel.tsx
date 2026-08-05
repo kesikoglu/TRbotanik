@@ -1,12 +1,14 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { describeError } from '../backend/client';
-import { canContribute, signOut, updateOwnProfile, type SessionUser } from '../backend/auth';
+import { canContribute, isAdmin, signOut, updateOwnProfile, type SessionUser } from '../backend/auth';
 
 interface Props {
   user: SessionUser;
   onClose: () => void;
   onChanged: () => void;
+  /** Yönetici panelini açar; yalnızca yöneticide gösterilir. */
+  onOpenAdmin: () => void;
 }
 
 /**
@@ -16,7 +18,7 @@ interface Props {
  * veri giremiyorum" sorusunu, denemesine gerek kalmadan burada yanıtlamak
  * gerekiyor; aksi hâlde sunucudan gelen RLS reddi anlaşılmaz bir hataya dönüşür.
  */
-export function AccountPanel({ user, onClose, onChanged }: Props) {
+export function AccountPanel({ user, onClose, onChanged, onOpenAdmin }: Props) {
   const { t } = useTranslation();
   const [displayName, setDisplayName] = useState(user.profile?.display_name ?? '');
   const [institution, setInstitution] = useState(user.profile?.institution ?? '');
@@ -155,6 +157,17 @@ export function AccountPanel({ user, onClose, onChanged }: Props) {
                 {busy ? t('auth.working') : t('auth.saveProfile')}
               </button>
             </form>
+
+            {isAdmin(user) && (
+              <button
+                type="button"
+                className="button button--block"
+                onClick={onOpenAdmin}
+                data-testid="account-open-admin"
+              >
+                {t('admin.open')}
+              </button>
+            )}
 
             <button
               type="button"

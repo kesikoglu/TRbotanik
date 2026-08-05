@@ -256,5 +256,21 @@
     },
     "welcomeTitle": "Hoş geldiniz",
     "gotIt": "Anladım"
+  },
+  "admin": {
+    "open": "Yönetici paneli",
+    "title": "Kullanıcı yönetimi",
+    "pendingCount": "{{count}} hesap onay bekliyor",
+    "noPending": "Onay bekleyen hesap yok.",
+    "noUsers": "Henüz kayıtlı kullanıcı yok.",
+    "colName": "Ad soyad",
+    "colInstitution": "Kurum",
+    "colRole": "Rol",
+    "colStatus": "Durum",
+    "colActions": "İşlem",
+    "approve": "Onayla",
+    "suspend": "Askıya al",
+    "reinstate": "Askıyı kaldır",
+    "you": "siz"
   }
 }

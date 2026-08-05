@@ -13,6 +13,7 @@ import { DetailPane } from './features/DetailPane';
 import { ProvinceTable } from './features/ProvinceTable';
 import { AuthPanel } from './features/AuthPanel';
 import { AccountPanel } from './features/AccountPanel';
+import { AdminPanel } from './features/AdminPanel';
 import { isBackendConfigured } from './backend/config';
 import { useSession, type SessionState } from './backend/useSession';
 import { setLanguage, SUPPORTED_LANGUAGES, type Language } from './i18n';
@@ -187,7 +188,7 @@ function Stat({ value, label }: { value: number | string; label: string }) {
  */
 function AccountButton({ session }: { session: SessionState }) {
   const { t } = useTranslation();
-  const [panel, setPanel] = useState<'none' | 'auth' | 'account'>('none');
+  const [panel, setPanel] = useState<'none' | 'auth' | 'account' | 'admin'>('none');
 
   if (!isBackendConfigured()) return null;
   // İlk oturum sorgusu sürerken düğmeyi çizmiyoruz: aksi hâlde giriş yapmış bir
@@ -221,7 +222,11 @@ function AccountButton({ session }: { session: SessionState }) {
           user={user}
           onClose={() => setPanel('none')}
           onChanged={() => void session.refresh()}
+          onOpenAdmin={() => setPanel('admin')}
         />
+      )}
+      {panel === 'admin' && user && (
+        <AdminPanel user={user} onClose={() => setPanel('none')} />
       )}
     </>
   );
