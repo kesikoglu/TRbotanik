@@ -1,6 +1,8 @@
 import { isDavisCode, type OccurrenceRecord, type TaxonNode } from '@trbotanik/shared';
+import { SUPABASE_URL } from './config';
 import { listApprovedObservations } from './observations';
-import type { Observation } from './types';
+import { publicPhotoUrl } from './photos';
+import type { ObservationWithRelations } from './types';
 
 /**
  * Onaylı topluluk gözlemlerini haritanın anladığı `OccurrenceRecord` biçimine çevirir.
@@ -44,7 +46,7 @@ export function buildTaxonIndex(nodes: TaxonNode[]): {
 }
 
 export function toOccurrenceRecords(
-  observations: Observation[],
+  observations: ObservationWithRelations[],
   nodes: TaxonNode[],
   displayNameById: Map<string, { displayName: string; institution?: string }> = new Map(),
 ): CommunityResult {
@@ -64,6 +66,11 @@ export function toOccurrenceRecords(
 
     const contributor = displayNameById.get(obs.created_by);
 
+    // Kaydın KENDİ fotoğrafı — türün referans görselinin yerine geçer. Bir
+    // topluluk noktasına tıklayan kullanıcı o gözlemde çekilmiş kareyi görmeli.
+    const photos = [...(obs.observation_photos ?? [])].sort((a, b) => a.sort_order - b.sort_order);
+    const firstPhoto = photos[0];
+
     occurrences.push({
       // Ön ek, GBIF kayıt kimlikleriyle çakışmayı imkânsız kılar.
       id: `community-${obs.id}`,
@@ -77,6 +84,9 @@ export function toOccurrenceRecords(
       elevationM: obs.elevation_m,
       basisOfRecord: 'HUMAN_OBSERVATION',
       source: 'community',
+      photoUrl: firstPhoto ? publicPhotoUrl(SUPABASE_URL, firstPhoto.storage_path) : null,
+      locality: obs.locality,
+      note: obs.notes,
       ...(contributor
         ? {
             contributor: {

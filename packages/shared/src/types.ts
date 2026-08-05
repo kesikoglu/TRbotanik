@@ -328,6 +328,18 @@ export interface OccurrenceRecord {
     institution?: string;
     academicVerified: boolean;
   };
+  /**
+   * Bu KAYDA ait fotoğrafın adresi (topluluk katkılarında ekleyenin yüklediği).
+   *
+   * Türün referans fotoğrafından ayrıdır ve onun yerine geçer: bir topluluk
+   * noktasına tıklayan kullanıcı, o gözlemde çekilmiş fotoğrafı görmelidir —
+   * türün GBIF/iNaturalist referans görselini değil.
+   */
+  photoUrl?: string | null;
+  /** Darwin Core: verbatimLocality — kaydın serbest metin mevkisi. */
+  locality?: string | null;
+  /** Kaydı ekleyenin notu (topluluk katkılarında). */
+  note?: string | null;
   license: LicenseId;
 }
 

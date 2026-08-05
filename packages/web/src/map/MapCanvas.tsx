@@ -56,6 +56,8 @@ function occurrencePopupHtml(
   const source = props['source'] as string | undefined;
   const imageUrl = props['imageUrl'] as string | null | undefined;
   const contributor = props['contributor'] as string | null | undefined;
+  const locality = props['locality'] as string | null | undefined;
+  const note = props['note'] as string | null | undefined;
 
   const missing = t('value.missing');
   const rows: Array<[string, string]> = [
@@ -71,8 +73,12 @@ function occurrencePopupHtml(
 
   // Topluluk kaydının kimden geldiği görünmeli: katkı, kaynağıyla birlikte
   // anlam kazanır ve katkıda bulunana atıf verilmesi gerekir.
-  if (source === 'community' && contributor) {
-    rows.push([t('popup.fieldContributor'), escapeHtml(contributor)]);
+  if (source === 'community') {
+    // Topluluk kaydının KENDİ alanları: kullanıcı o gözlemi görmek için tıkladı,
+    // türün genel bilgilerini değil.
+    if (locality) rows.push([t('observation.locality'), escapeHtml(locality)]);
+    if (note) rows.push([t('observation.notes'), escapeHtml(note)]);
+    if (contributor) rows.push([t('popup.fieldContributor'), escapeHtml(contributor)]);
   }
 
   // Bu katmandaki her nokta AYNI türe ait (seçili tür), ama kullanıcı detay
@@ -732,7 +738,14 @@ export function MapCanvas({ dataset, selection, occurrences: allOccurrences }: P
               basisOfRecord: occ.basisOfRecord,
               source: occ.source,
               contributor: occ.contributor?.displayName ?? null,
-              imageUrl: firstImageUrl(dataset.details[occ.taxonId]?.images, node?.name ?? null),
+              locality: occ.locality ?? null,
+              note: occ.note ?? null,
+              // Topluluk kaydı KENDİ fotoğrafını gösterir; türün referans
+              // görseline DÜŞMEZ — o kare o gözlemde çekilmedi.
+              imageUrl:
+                occ.source === 'community'
+                  ? (occ.photoUrl ?? null)
+                  : firstImageUrl(dataset.details[occ.taxonId]?.images, node?.name ?? null),
             },
             geometry: { type: 'Point' as const, coordinates: [occ.lon, occ.lat] },
           };
@@ -859,7 +872,9 @@ export function MapCanvas({ dataset, selection, occurrences: allOccurrences }: P
             basisOfRecord: occ.basisOfRecord,
             source: occ.source,
             contributor: occ.contributor?.displayName ?? null,
-            imageUrl: speciesImageUrl,
+            locality: occ.locality ?? null,
+            note: occ.note ?? null,
+            imageUrl: occ.source === 'community' ? (occ.photoUrl ?? null) : speciesImageUrl,
           },
           geometry: { type: 'Point' as const, coordinates: [occ.lon, occ.lat] },
         })),

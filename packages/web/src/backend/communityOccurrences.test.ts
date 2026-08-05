@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { buildTaxonomyNodes, type RawTaxon } from '@trbotanik/shared';
 import { buildTaxonIndex, toOccurrenceRecords } from './communityOccurrences';
-import type { Observation } from './types';
+import type { ObservationPhoto, ObservationWithRelations } from './types';
 
 /** Küçük bir taksonomi ağacı: iki tür, biri GBIF anahtarlı biri anahtarsız. */
 const RAW: RawTaxon[] = [
@@ -26,7 +26,7 @@ const RAW: RawTaxon[] = [
 ];
 const NODES = buildTaxonomyNodes(RAW);
 
-function observation(overrides: Partial<Observation> = {}): Observation {
+function observation(overrides: Partial<ObservationWithRelations> = {}): ObservationWithRelations {
   return {
     id: 'obs-1',
     gbif_key: 5352983,
@@ -51,6 +51,8 @@ function observation(overrides: Partial<Observation> = {}): Observation {
     reviewed_by: null,
     reviewed_at: null,
     review_note: null,
+    observation_photos: [],
+    profiles: null,
     ...overrides,
   };
 }
@@ -163,5 +165,65 @@ describe('toOccurrenceRecords', () => {
 
   it('boş girdide boş sonuç verir', () => {
     expect(toOccurrenceRecords([], NODES)).toEqual({ occurrences: [], unmatched: 0 });
+  });
+});
+
+describe('kaydın kendi verisi (fotoğraf, mevki, not)', () => {
+  function photo(overrides: Partial<ObservationPhoto> = {}): ObservationPhoto {
+    return {
+      id: 'p1',
+      observation_id: 'obs-1',
+      storage_path: 'user-1/obs-1/0.jpg',
+      caption: null,
+      sort_order: 0,
+      width: 1600,
+      height: 1200,
+      bytes: 240_000,
+      created_at: '',
+      ...overrides,
+    };
+  }
+
+  /*
+   * Bu, gerçek bir kullanıcı geri bildiriminden doğdu: haritada bir topluluk
+   * noktasına tıklanınca, o gözlemde çekilen fotoğraf yerine TÜRÜN GBIF referans
+   * görseli görünüyordu ("buluyor ama benim girdiğim data bu değil").
+   */
+  it('gözlemin KENDİ fotoğrafını taşır', () => {
+    const { occurrences } = toOccurrenceRecords(
+      [observation({ observation_photos: [photo()] })],
+      NODES,
+    );
+    expect(occurrences[0]!.photoUrl).toContain('user-1/obs-1/0.jpg');
+    expect(occurrences[0]!.photoUrl).toContain('observation-photos');
+  });
+
+  it('birden çok fotoğrafta sort_order en küçük olanı seçer', () => {
+    const { occurrences } = toOccurrenceRecords(
+      [
+        observation({
+          observation_photos: [
+            photo({ id: 'p2', storage_path: 'user-1/obs-1/2.jpg', sort_order: 2 }),
+            photo({ id: 'p0', storage_path: 'user-1/obs-1/0.jpg', sort_order: 0 }),
+          ],
+        }),
+      ],
+      NODES,
+    );
+    expect(occurrences[0]!.photoUrl).toContain('/0.jpg');
+  });
+
+  it('fotoğrafsız kayıtta null verir — türün referans görseline DÜŞMEZ', () => {
+    const { occurrences } = toOccurrenceRecords([observation()], NODES);
+    expect(occurrences[0]!.photoUrl).toBeNull();
+  });
+
+  it('mevki ve notu taşır', () => {
+    const { occurrences } = toOccurrenceRecords(
+      [observation({ locality: 'Ataşehir', notes: 'Feci kokuyor' })],
+      NODES,
+    );
+    expect(occurrences[0]!.locality).toBe('Ataşehir');
+    expect(occurrences[0]!.note).toBe('Feci kokuyor');
   });
 });

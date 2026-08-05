@@ -1,6 +1,6 @@
 import { getSupabase } from './client';
 import { uploadPhoto, type PreparedPhoto } from './photos';
-import type { Observation, ObservationDraft, ObservationStatus, ObservationWithRelations } from './types';
+import type { ObservationDraft, ObservationStatus, ObservationWithRelations } from './types';
 
 /**
  * Gözlem okuma/yazma.
@@ -88,15 +88,17 @@ export async function listPendingObservations(): Promise<ObservationWithRelation
  * Giriş yapılmamış olsa da çalışır: `observations_select_approved` politikası
  * onaylı kayıtları herkese açar.
  */
-export async function listApprovedObservations(): Promise<Observation[]> {
+export async function listApprovedObservations(): Promise<ObservationWithRelations[]> {
   const supabase = await getSupabase();
+  // Fotoğraflar da çekilir: haritada bir topluluk noktasına tıklandığında
+  // O GÖZLEMDE çekilmiş fotoğraf gösterilmeli, türün referans görseli değil.
   const { data, error } = await supabase
     .from('observations')
-    .select('*')
+    .select('*, observation_photos(*)')
     .eq('status', 'approved')
     .order('observed_on', { ascending: false });
   if (error) throw error;
-  return (data ?? []) as Observation[];
+  return (data ?? []) as ObservationWithRelations[];
 }
 
 /** Gözlemi denetler (onayla/reddet/askıya al). Küratör ve yönetici yetkisi gerekir. */
