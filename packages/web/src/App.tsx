@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { TaxonNode } from '@trbotanik/shared';
 import { useDataset } from './data/useDataset';
 import { applyFilter, buildEndemicSet } from './domain/filter';
 import { useAppStore } from './state/useAppStore';
@@ -14,6 +15,8 @@ import { ProvinceTable } from './features/ProvinceTable';
 import { AuthPanel } from './features/AuthPanel';
 import { AccountPanel } from './features/AccountPanel';
 import { AdminPanel } from './features/AdminPanel';
+import { ObservationForm } from './features/ObservationForm';
+import { canContribute } from './backend/auth';
 import { isBackendConfigured } from './backend/config';
 import { useSession, type SessionState } from './backend/useSession';
 import { setLanguage, SUPPORTED_LANGUAGES, type Language } from './i18n';
@@ -108,7 +111,7 @@ function Workspace({ dataset }: { dataset: Dataset }) {
           ))}
         </div>
 
-        <AccountButton session={session} />
+        <AccountButton session={session} nodes={dataset.nodes} />
       </header>
 
       {dataset.manifest.mode === 'fixture' && (
@@ -186,9 +189,9 @@ function Stat({ value, label }: { value: number | string; label: string }) {
  * bir harita olarak eksiksiz çalışmaya devam eder (e2e testleri ve çevrimdışı
  * gösterimler bu yola dayanır).
  */
-function AccountButton({ session }: { session: SessionState }) {
+function AccountButton({ session, nodes }: { session: SessionState; nodes: TaxonNode[] }) {
   const { t } = useTranslation();
-  const [panel, setPanel] = useState<'none' | 'auth' | 'account' | 'admin'>('none');
+  const [panel, setPanel] = useState<'none' | 'auth' | 'account' | 'admin' | 'observation'>('none');
 
   if (!isBackendConfigured()) return null;
   // İlk oturum sorgusu sürerken düğmeyi çizmiyoruz: aksi hâlde giriş yapmış bir
@@ -200,6 +203,20 @@ function AccountButton({ session }: { session: SessionState }) {
 
   return (
     <>
+      {/* Gözlem ekleme yalnızca ONAYLI kullanıcıda görünür — onay bekleyene
+          çalışmayacak bir düğme göstermenin anlamı yok, gerekçesi hesap
+          kipinde zaten yazıyor. */}
+      {canContribute(user) && (
+        <button
+          type="button"
+          className="account-button"
+          onClick={() => setPanel('observation')}
+          data-testid="add-observation-button"
+        >
+          + {t('observation.open')}
+        </button>
+      )}
+
       <button
         type="button"
         className={`account-button${pending ? ' account-button--pending' : ''}`}
@@ -227,6 +244,9 @@ function AccountButton({ session }: { session: SessionState }) {
       )}
       {panel === 'admin' && user && (
         <AdminPanel user={user} onClose={() => setPanel('none')} />
+      )}
+      {panel === 'observation' && user && (
+        <ObservationForm user={user} nodes={nodes} onClose={() => setPanel('none')} />
       )}
     </>
   );

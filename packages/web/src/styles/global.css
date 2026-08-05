@@ -1317,6 +1317,119 @@ button {
   color: var(--c-text);
 }
 
+/* ── Gözlem formu ─────────────────────────────────────────────────── */
+
+/* Form kipi mobilde neredeyse tam ekran olur: arazide tek elle doldurulacak. */
+.modal--form {
+  max-width: 520px;
+}
+
+/* Tür arama önerileri */
+.suggestions {
+  max-height: 240px;
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+  overflow-y: auto;
+  background: var(--c-bg);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-md);
+}
+
+.suggestions__item {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  width: 100%;
+  /* Dokunma hedefi: arazide, eldivenle veya sallanan elle kullanılacak. */
+  padding: var(--sp-2) var(--sp-3);
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--c-border);
+  text-align: left;
+}
+
+.suggestions li:last-child .suggestions__item {
+  border-bottom: 0;
+}
+
+.suggestions__item:hover,
+.suggestions__item:focus-visible {
+  background: var(--c-surface-2);
+}
+
+.suggestions__sci {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 14px;
+}
+
+.suggestions__vern {
+  font-size: 12px;
+  color: var(--c-text-muted);
+}
+
+/* Seçilen tür */
+.picked {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--c-surface-2);
+  border: 1px solid var(--c-border-strong);
+  border-radius: var(--r-md);
+}
+
+.picked__name {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.picked__vernacular {
+  font-size: 13px;
+  color: var(--c-text-muted);
+}
+
+.picked .chip {
+  margin-left: auto;
+}
+
+/* Fotoğraf önizlemeleri */
+.photo-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-top: var(--sp-2);
+}
+
+.photo-strip__item {
+  position: relative;
+  width: 84px;
+  height: 84px;
+  border-radius: var(--r-md);
+  overflow: hidden;
+  border: 1px solid var(--c-border);
+}
+
+.photo-strip__item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.photo-strip__remove {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 22px;
+  height: 22px;
+  background: rgba(6, 10, 8, 0.8);
+}
+
 /* ── Üst çubuktaki hesap düğmesi ──────────────────────────────────── */
 
 .account-button {
@@ -1374,5 +1487,80 @@ button {
     position: absolute;
     inset: 0;
     z-index: 10;
+  }
+}
+
+/* ── Telefon ──────────────────────────────────────────────────────── */
+/* Asıl saha kullanımı burada olacak: arazide, tek elle, küçük ekranda. */
+
+@media (max-width: 640px) {
+  /* Üst çubuk tek satıra sığmıyor; sarmalanmazsa sayfa yatay taşıyor ve
+     `position: fixed` kipler görsel olarak ekranın dışına kayıyordu. */
+  .topbar {
+    flex-wrap: wrap;
+    gap: var(--sp-2);
+    padding: var(--sp-2) var(--sp-3);
+  }
+
+  .topbar__spacer {
+    display: none;
+  }
+
+  .topbar__brand {
+    flex: 1 1 100%;
+  }
+
+  .topbar__subtitle {
+    display: none;
+  }
+
+  /* Sayaçlar dar ekranda kaydırılabilir tek şerit olur. */
+  .topbar__stats {
+    flex: 1 1 100%;
+    gap: var(--sp-3);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .topbar__stats::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Taksonomi kenar çubuğu saha girişinde gereksiz yer kaplıyor. */
+  .app__body,
+  .app__body--detail-open {
+    grid-template-rows: 180px 1fr;
+  }
+
+  /* Kipler telefonda TAM EKRAN açılır. Ortalanmış ve yüksekliği sınırlı bir
+     kip, içerik ekrandan uzun olduğunda üstten taşar ve flex ortalama yüzünden
+     yukarı kaydırılamaz hâle gelir — gönder düğmesine ulaşılamıyordu. */
+  .modal-overlay {
+    padding: 0;
+    align-items: stretch;
+    justify-content: stretch;
+  }
+
+  .modal,
+  .modal--wide,
+  .modal--form {
+    max-width: none;
+    max-height: none;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    border-radius: 0;
+  }
+
+  /* iOS'ta alt çubuk içeriği örtmesin. */
+  .modal__body {
+    padding-bottom: calc(var(--sp-6) + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* Yönetici tablosu dar ekranda yatay kaydırılır. */
+  .modal__body .province-table__grid {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
   }
 }
