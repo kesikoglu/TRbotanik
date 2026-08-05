@@ -1,0 +1,78 @@
+name: Veritabanı şeması ve RLS testleri
+
+# Şema ve satır bazlı güvenlik (RLS) politikaları gerçek bir PostgreSQL üzerinde
+# sınanır. NEDEN: RLS'teki bir hata sessiz bir güvenlik açığıdır — uygulama
+# çalışmaya devam eder, sadece yetkisiz kişi veri yazar/okur. Birim testleri bunu
+# yakalayamaz; politikanın kendisini veritabanına uygulayıp denemek gerekir.
+on:
+  push:
+    branches:
+      - claude/turkiye-botanik-haritasi-di1550
+    paths:
+      - 'supabase/**'
+      - '.github/workflows/db-tests.yml'
+  pull_request:
+    paths:
+      - 'supabase/**'
+  workflow_dispatch:
+
+jobs:
+  rls:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: trbotanik
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      PGHOST: localhost
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: trbotanik
+
+    steps:
+      - name: Depoyu al
+        uses: actions/checkout@v4
+
+      - name: Node.js kur
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Bağımlılıkları kur
+        run: npm ci
+
+      - name: Paylaşılan paketi derle
+        run: npm run build -w @trbotanik/shared
+
+      - name: auth şemasını taklit et
+        # Supabase'in sağladığı auth.users tablosu ve auth.uid() fonksiyonu
+        # burada yok; testin çalışabilmesi için en küçük karşılıkları kurulur.
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/auth-stub.sql
+
+      - name: Şemayı uygula
+        run: |
+          for f in supabase/migrations/*.sql; do
+            echo "→ $f"
+            psql -v ON_ERROR_STOP=1 -q -f "$f"
+          done
+
+      - name: RLS politikalarını sına
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/rls.test.sql
+
+      - name: Davis kare fonksiyonunu JS uygulamasıyla karşılaştır
+        # SQL'deki davis_square(), packages/shared/src/davis.ts'in yeniden
+        # uygulamasıdır. İkisi ayrışırsa saha kayıtları GBIF kayıtlarından farklı
+        # karelere düşer ve bu ancak çok sonra fark edilir — burada sabitlenir.
+        run: node scripts/verify-davis-sql.mjs
