@@ -13,17 +13,14 @@
 \set ON_ERROR_STOP on
 set client_min_messages to warning;
 
--- --- Supabase rollerini taklit et -----------------------------------------
-do $$ begin
-  if not exists (select 1 from pg_roles where rolname = 'anon') then create role anon; end if;
-  if not exists (select 1 from pg_roles where rolname = 'authenticated') then create role authenticated; end if;
-end $$;
-
-grant usage on schema public to anon, authenticated;
-grant select on public.profiles, public.observations, public.observation_photos to anon, authenticated;
-grant insert, update, delete on public.observations, public.observation_photos to authenticated;
-grant update on public.profiles to authenticated;
-grant execute on all functions in schema public to anon, authenticated;
+-- --- İzinler ---------------------------------------------------------------
+-- DİKKAT: `public` şemasındaki tablo/fonksiyon izinleri KASITLI olarak burada
+-- verilmez — onları 0001_init.sql'in kendisi verir. Böylece bu test, migration'ın
+-- gerçek izinlerini sınar; testin kendi verdiği izinler doğru sonucu taklit edip
+-- eksik bir GRANT'i gizleyemez.
+--
+-- Aşağıdakiler yalnızca üretimde Supabase'in sağladığı, bizim migration'ımızın
+-- sorumluluğunda olmayan şemalar içindir (bkz. auth-stub.sql).
 grant usage on schema auth to anon, authenticated;
 grant select on auth.users to anon, authenticated;
 grant usage on schema storage to anon, authenticated;

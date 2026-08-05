@@ -338,3 +338,50 @@ create policy observation_photos_delete_own on public.observation_photos
 
 create policy observation_photos_admin_all on public.observation_photos
   for all using (public.is_admin()) with check (public.is_admin());
+
+-- ---------------------------------------------------------------------------
+-- API erişim izinleri
+-- ---------------------------------------------------------------------------
+-- Projede "Automatically expose new tables" KAPALI olduğu varsayımıyla izinler
+-- burada açıkça verilir. Neden kapalı: açık bırakılırsa ileride eklenen her
+-- tablo kendiliğinden API'ye açılır — unutulan bir tablo sessiz bir sızıntı olur.
+--
+-- GRANT ve RLS iki AYRI katmandır ve ikisi de gerekir:
+--   GRANT → bu role tabloya hiç dokunabilir mi (tablo düzeyi)
+--   RLS   → dokunabiliyorsa HANGİ satırlara (satır düzeyi)
+-- Aşağıdaki izinler kasıtlı olarak geniştir; asıl kısıtlama yukarıdaki
+-- politikalardadır ve supabase/tests/rls.test.sql onları sınar.
+--
+-- Roller: `anon` = giriş yapmamış ziyaretçi, `authenticated` = giriş yapmış kullanıcı.
+-- (Kendi sunucunuzda barındırırken bu iki rolü de siz oluşturursunuz.)
+do $$
+begin
+  if not exists (select 1 from pg_roles where rolname = 'anon') then
+    create role anon nologin noinherit;
+  end if;
+  if not exists (select 1 from pg_roles where rolname = 'authenticated') then
+    create role authenticated nologin noinherit;
+  end if;
+end $$;
+
+grant usage on schema public to anon, authenticated;
+
+-- Profiller herkese açık okunur (katkıda bulunanın adı gözlem kartında görünür).
+-- E-posta bu tabloda DEĞİL, auth.users'da durur ve dışarı sızmaz.
+grant select on public.profiles to anon, authenticated;
+grant update on public.profiles to authenticated;
+
+-- Onaylı gözlemler halka açık haritada görünür, bu yüzden anon da okur.
+grant select                 on public.observations to anon, authenticated;
+grant insert, update, delete on public.observations to authenticated;
+
+grant select         on public.observation_photos to anon, authenticated;
+grant insert, delete on public.observation_photos to authenticated;
+
+-- RLS politikaları bu fonksiyonları ÇAĞIRAN kullanıcının yetkisiyle çalıştırır;
+-- execute izni olmadan politikalar değerlendirilemez.
+grant execute on function public.davis_square(double precision, double precision) to anon, authenticated;
+grant execute on function public.is_admin()           to anon, authenticated;
+grant execute on function public.is_curator()         to anon, authenticated;
+grant execute on function public.is_approved()        to anon, authenticated;
+grant execute on function public.current_role_name()  to anon, authenticated;
