@@ -19,6 +19,10 @@ interface Props {
    * süzgeç göstermek kullanıcıyı yanıltır.
    */
   hasCommunity: boolean;
+  /** Topluluk katmanı yüklenemediyse açıklaması; kullanıcıya gösterilir. */
+  communityError?: string | null;
+  /** Taksonomi ağacında eşleşmediği için gösterilemeyen onaylı katkı sayısı. */
+  communityUnmatched?: number;
 }
 
 interface Row {
@@ -67,6 +71,8 @@ export function TaxonomySidebar({
   selection,
   provinces,
   hasCommunity,
+  communityError,
+  communityUnmatched = 0,
 }: Props) {
   const { t, i18n } = useTranslation();
 
@@ -255,6 +261,19 @@ export function TaxonomySidebar({
             </button>
           )}
         </div>
+
+        {/* Katkı katmanı yüklenemediyse SESSİZ KALINMAZ: kullanıcı katkılarının
+            neden görünmediğini burada öğrenir. */}
+        {communityError && (
+          <p className="sidebar__note sidebar__note--error" data-testid="community-error">
+            {t('filter.communityLoadFailed')} {communityError}
+          </p>
+        )}
+        {communityUnmatched > 0 && (
+          <p className="sidebar__note" data-testid="community-unmatched">
+            {t('filter.communityUnmatched', { count: communityUnmatched })}
+          </p>
+        )}
       </div>
 
       <div className="sidebar__section">

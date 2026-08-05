@@ -32,7 +32,9 @@
     "resultCount": "{{count}} taxa",
     "provinceLabel": "Filter by province",
     "provinceAll": "All provinces",
-    "communityOnly": "Community records"
+    "communityOnly": "Community records",
+    "communityLoadFailed": "Could not load community records:",
+    "communityUnmatched": "{{count}} approved contribution(s) cannot be shown: no matching species in the list."
   },
   "rank": {
     "CLASS": "Class",

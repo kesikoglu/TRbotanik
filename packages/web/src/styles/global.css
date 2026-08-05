@@ -1631,3 +1631,15 @@ button {
     grid-template-columns: 1fr;
   }
 }
+
+/* Kenar çubuğu bilgi notu — katkı katmanı hataları burada görünür. */
+.sidebar__note {
+  margin: var(--sp-2) 0 0;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--c-text-muted);
+}
+
+.sidebar__note--error {
+  color: var(--c-danger);
+}

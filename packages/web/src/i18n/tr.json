@@ -32,7 +32,9 @@
     "resultCount": "{{count}} takson",
     "provinceLabel": "İle göre filtrele",
     "provinceAll": "Tüm iller",
-    "communityOnly": "Topluluk katkıları"
+    "communityOnly": "Topluluk katkıları",
+    "communityLoadFailed": "Topluluk katkıları yüklenemedi:",
+    "communityUnmatched": "{{count}} onaylı katkı, tür listesinde eşleşmediği için haritada gösterilemiyor."
   },
   "rank": {
     "CLASS": "Sınıf",

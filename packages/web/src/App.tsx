@@ -146,6 +146,8 @@ function Workspace({ dataset }: { dataset: Dataset }) {
           selection={selection}
           provinces={provinces}
           hasCommunity={community.occurrences.length > 0}
+          communityError={community.error}
+          communityUnmatched={community.unmatched}
         />
 
         <div className="map-pane">
