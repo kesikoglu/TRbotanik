@@ -50,6 +50,7 @@ declare
   ok_id     uuid := '22222222-2222-2222-2222-222222222222';
   pending_id uuid := '33333333-3333-3333-3333-333333333333';
   curator_id uuid := '44444444-4444-4444-4444-444444444444';
+  chain_id   uuid := '99999999-9999-9999-9999-999999999999';
   obs_id    uuid;
   n         integer;
   failed    boolean;
@@ -217,7 +218,38 @@ begin
   assert failed, 'Onay bekleyen kullanıcı fotoğraf yükleyebildi — depolama açığı!';
   reset role;
 
+  -- =========================================================================
+  -- 12) Denetim kuyruğunun ihtiyaç duyduğu ilişkiler yerinde mi
+  -- =========================================================================
+  -- PostgREST, `profiles!observations_created_by_fkey(...)` gömmesini YABANCI
+  -- ANAHTAR ÜST VERİSİNDEN çözer. Bu anahtar profiles yerine auth.users'a
+  -- bakarsa sorgu "Could not find a relationship" hatası verir ve onay bekleyen
+  -- kayıtlar denetim panelinde HİÇ görünmez — bu gerçekten yaşandı, bu yüzden
+  -- ilişki burada sabitleniyor.
+  select count(*) into n
+  from pg_constraint con
+  join pg_class src on src.oid = con.conrelid
+  join pg_class tgt on tgt.oid = con.confrelid
+  join pg_namespace tgt_ns on tgt_ns.oid = tgt.relnamespace
+  where con.contype = 'f'
+    and con.conname = 'observations_created_by_fkey'
+    and src.relname = 'observations'
+    and tgt_ns.nspname = 'public'
+    and tgt.relname = 'profiles';
+  assert n = 1,
+    'observations_created_by_fkey public.profiles''a bakmıyor — denetim kuyruğu boş görünür!';
+
+  -- Silme zinciri: kullanıcı silinince gözlemleri de gitmeli
+  -- (auth.users → profiles → observations, hepsi cascade).
+  insert into auth.users (id, email) values (chain_id, 'zincir@test.tr');
+  update public.profiles set status = 'approved' where id = chain_id;
+  insert into public.observations (scientific_name, lat, lon, observed_on, created_by)
+  values ('Zincir testi', 39.9, 32.8, current_date, chain_id);
+  delete from auth.users where id = chain_id;
+  select count(*) into n from public.observations where created_by = chain_id;
+  assert n = 0, 'Kullanıcı silindiğinde gözlemleri silinmedi — silme zinciri kopuk!';
+
   -- `warning` seviyesi kasıtlı: yukarıdaki `client_min_messages = warning`
   -- ayarı notice'ları gizler, bu satırın çıktıda GÖRÜNMESİ gerekir.
-  raise warning 'TÜM RLS TESTLERİ GEÇTİ (11/11)';
+  raise warning 'TÜM RLS TESTLERİ GEÇTİ (12/12)';
 end $$;

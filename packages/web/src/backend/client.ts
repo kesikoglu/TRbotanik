@@ -40,8 +40,36 @@ export async function getSupabase(): Promise<SupabaseClient> {
  * anlamlı Türkçe karşılıklarına eşlenir. Eşleşmeyen hata GİZLENMEZ, olduğu gibi
  * gösterilir — sessizce yutmak, sorunu teşhis edilemez hâle getirirdi.
  */
+/**
+ * Hata değerinden okunabilir bir metin çıkarır.
+ *
+ * PostgREST/GoTrue hataları `Error` ÖRNEĞİ DEĞİLDİR; `{ message, code, details,
+ * hint }` biçiminde düz nesnelerdir. Bunlara `String()` uygulamak "[object Object]"
+ * üretir ve asıl sorunu tamamen gizler — bu gerçekten yaşandı: eksik bir yabancı
+ * anahtar yüzünden başarısız olan bir sorgu, ekranda yalnızca "[object Object]"
+ * olarak göründü ve teşhis edilemedi.
+ */
+function toMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'string') return error;
+  if (error && typeof error === 'object') {
+    const e = error as { message?: unknown; details?: unknown; hint?: unknown; code?: unknown };
+    const parts = [e.message, e.details, e.hint]
+      .filter((p): p is string => typeof p === 'string' && p.length > 0);
+    if (parts.length > 0) {
+      return e.code ? `${parts.join(' — ')} (${String(e.code)})` : parts.join(' — ');
+    }
+    try {
+      return JSON.stringify(error);
+    } catch {
+      /* döngüsel nesne — aşağıdaki String()'e düşer */
+    }
+  }
+  return String(error);
+}
+
 export function describeError(error: unknown): string {
-  const message = error instanceof Error ? error.message : String(error);
+  const message = toMessage(error);
   const lower = message.toLowerCase();
 
   if (lower.includes('row-level security')) {
@@ -61,6 +89,9 @@ export function describeError(error: unknown): string {
   }
   if (lower.includes('failed to fetch') || lower.includes('networkerror')) {
     return 'Sunucuya ulaşılamadı. İnternet bağlantınızı kontrol edin.';
+  }
+  if (lower.includes('could not find a relationship')) {
+    return `Veritabanı ilişkisi çözülemedi — şema güncellemesi gerekiyor olabilir. (${message})`;
   }
   return message;
 }

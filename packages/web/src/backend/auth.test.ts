@@ -108,4 +108,38 @@ describe('describeError', () => {
   it('Error olmayan değeri de metne çevirir', () => {
     expect(describeError('düz metin hata')).toBe('düz metin hata');
   });
+
+  /*
+   * PostgREST hataları `Error` ÖRNEĞİ DEĞİLDİR — düz nesnelerdir. Bunlara
+   * String() uygulamak "[object Object]" üretir ve asıl sorunu tamamen gizler.
+   * Bu gerçekten yaşandı: eksik bir yabancı anahtar yüzünden başarısız olan
+   * denetim sorgusu ekranda sadece "[object Object]" olarak göründü.
+   */
+  it('PostgREST hata NESNESİNİ okunur metne çevirir — "[object Object]" ÜRETMEZ', () => {
+    const postgrestError = {
+      message: "Could not find a relationship between 'observations' and 'profiles'",
+      details: null,
+      hint: "Perhaps you meant 'observation_photos'",
+      code: 'PGRST200',
+    };
+    const result = describeError(postgrestError);
+    expect(result).not.toContain('[object Object]');
+    expect(result).toContain('PGRST200');
+    expect(result).toContain('şema güncellemesi gerekiyor');
+  });
+
+  it('yalnızca message taşıyan nesneyi de çözer', () => {
+    expect(describeError({ message: 'duplicate key value' })).toBe('duplicate key value');
+  });
+
+  it('hiç tanınır alanı olmayan nesneyi JSON olarak gösterir', () => {
+    // "[object Object]" yerine hiç değilse içeriği görünsün.
+    expect(describeError({ foo: 1 })).toBe('{"foo":1}');
+  });
+
+  it('döngüsel nesnede çökmez', () => {
+    const circular: Record<string, unknown> = {};
+    circular['self'] = circular;
+    expect(() => describeError(circular)).not.toThrow();
+  });
 });
