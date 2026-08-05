@@ -145,6 +145,7 @@ function Workspace({ dataset }: { dataset: Dataset }) {
           endemicIds={endemicIds}
           selection={selection}
           provinces={provinces}
+          hasCommunity={community.occurrences.length > 0}
         />
 
         <div className="map-pane">

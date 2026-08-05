@@ -31,7 +31,8 @@
     "noResults": "Eşleşen takson bulunamadı.",
     "resultCount": "{{count}} takson",
     "provinceLabel": "İle göre filtrele",
-    "provinceAll": "Tüm iller"
+    "provinceAll": "Tüm iller",
+    "communityOnly": "Topluluk katkıları"
   },
   "rank": {
     "CLASS": "Sınıf",

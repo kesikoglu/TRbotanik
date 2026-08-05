@@ -12,6 +12,13 @@ interface Props {
   selection: SelectionResult;
   /** En az bir kaydı olan iller — il filtresi seçeneklerini doldurur */
   provinces: string[];
+  /**
+   * Haritada gösterilebilen onaylı topluluk katkısı var mı.
+   *
+   * Yoksa filtre düğmesi HİÇ çizilmez: sonucu her zaman boş çıkacak bir
+   * süzgeç göstermek kullanıcıyı yanıltır.
+   */
+  hasCommunity: boolean;
 }
 
 interface Row {
@@ -53,7 +60,14 @@ function flatten(
   return rows;
 }
 
-export function TaxonomySidebar({ nodes, rootIds, endemicIds, selection, provinces }: Props) {
+export function TaxonomySidebar({
+  nodes,
+  rootIds,
+  endemicIds,
+  selection,
+  provinces,
+  hasCommunity,
+}: Props) {
   const { t, i18n } = useTranslation();
 
   const filter = useAppStore((s) => s.filter);
@@ -64,6 +78,7 @@ export function TaxonomySidebar({ nodes, rootIds, endemicIds, selection, provinc
   const clearFilter = useAppStore((s) => s.clearFilter);
   const toggleEndemicOnly = useAppStore((s) => s.toggleEndemicOnly);
   const toggleWithRecordsOnly = useAppStore((s) => s.toggleWithRecordsOnly);
+  const toggleCommunityOnly = useAppStore((s) => s.toggleCommunityOnly);
   const setProvince = useAppStore((s) => s.setProvince);
   const toggleExpanded = useAppStore((s) => s.toggleExpanded);
   const expandMany = useAppStore((s) => s.expandMany);
@@ -158,6 +173,7 @@ export function TaxonomySidebar({ nodes, rootIds, endemicIds, selection, provinc
     filter.query.trim() !== '' ||
     filter.endemicOnly ||
     filter.withRecordsOnly ||
+    filter.communityOnly ||
     filter.province !== null;
 
   /**
@@ -222,6 +238,17 @@ export function TaxonomySidebar({ nodes, rootIds, endemicIds, selection, provinc
           >
             {t('filter.withRecords')}
           </button>
+          {hasCommunity && (
+            <button
+              type="button"
+              className={`chip${filter.communityOnly ? ' chip--on' : ''}`}
+              onClick={toggleCommunityOnly}
+              aria-pressed={filter.communityOnly}
+              data-testid="facet-community"
+            >
+              {t('filter.communityOnly')}
+            </button>
+          )}
           {hasFilter && (
             <button type="button" className="chip chip--clear" onClick={clearFilter} data-testid="clear-filter">
               {t('filter.clear')}

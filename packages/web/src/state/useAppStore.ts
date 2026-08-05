@@ -35,6 +35,7 @@ interface AppState {
   clearFilter: () => void;
   toggleEndemicOnly: () => void;
   toggleWithRecordsOnly: () => void;
+  toggleCommunityOnly: () => void;
   setProvince: (province: string | null) => void;
   openProvinceTable: () => void;
   closeProvinceTable: () => void;
@@ -78,6 +79,11 @@ export const useAppStore = create<AppState>((set) => ({
   toggleWithRecordsOnly: () =>
     set((state) => ({
       filter: { ...state.filter, withRecordsOnly: !state.filter.withRecordsOnly },
+    })),
+
+  toggleCommunityOnly: () =>
+    set((state) => ({
+      filter: { ...state.filter, communityOnly: !state.filter.communityOnly },
     })),
 
   setProvince: (province) =>

@@ -31,7 +31,8 @@
     "noResults": "No matching taxa.",
     "resultCount": "{{count}} taxa",
     "provinceLabel": "Filter by province",
-    "provinceAll": "All provinces"
+    "provinceAll": "All provinces",
+    "communityOnly": "Community records"
   },
   "rank": {
     "CLASS": "Class",

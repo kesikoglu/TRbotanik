@@ -217,3 +217,116 @@ describe('buildEndemicSet', () => {
     expect(buildEndemicSet(details)).toEqual(new Set([1]));
   });
 });
+
+describe('topluluk katkısı filtresi', () => {
+  // Sevgi çiçeğine ait BİR topluluk kaydı; geven'in hiç topluluk kaydı yok.
+  const withCommunity: OccurrenceRecord[] = [
+    ...occurrences,
+    {
+      ...occurrence('c1', sevgi, 38.4, 27.1),
+      davisSquare: 'B1',
+      province: 'İzmir',
+      source: 'community',
+      contributor: { displayName: 'Ayşe Yılmaz', academicVerified: false },
+    },
+  ];
+
+  it('yalnızca topluluk kaydı OLAN türleri bırakır', () => {
+    const result = applyFilter(nodes, withCommunity, endemicIds, {
+      ...EMPTY_FILTER,
+      communityOnly: true,
+    });
+    expect(result.speciesIds).toEqual(new Set([sevgi]));
+  });
+
+  it('haritada YALNIZCA topluluk noktalarını bırakır', () => {
+    const result = applyFilter(nodes, withCommunity, endemicIds, {
+      ...EMPTY_FILTER,
+      communityOnly: true,
+    });
+    // Sevgi çiçeğinin bir de GBIF kaydı var; o gösterilmemeli.
+    expect(result.occurrences.map((o) => o.id)).toEqual(['c1']);
+    expect(result.occurrences.every((o) => o.source === 'community')).toBe(true);
+  });
+
+  it('kapalıyken her iki kaynağı da gösterir', () => {
+    const result = applyFilter(nodes, withCommunity, endemicIds, EMPTY_FILTER);
+    expect(result.occurrences).toHaveLength(5);
+  });
+
+  it('kare istatistikleri yalnızca topluluk kayıtlarından hesaplanır', () => {
+    const result = applyFilter(nodes, withCommunity, endemicIds, {
+      ...EMPTY_FILTER,
+      communityOnly: true,
+    });
+    expect(result.statsBySquare.get('B1')?.occurrenceCount).toBe(1);
+    // B4'te yalnızca GBIF kaydı var — filtre açıkken boş kalmalı.
+    expect(result.statsBySquare.get('B4')?.occurrenceCount).toBe(0);
+    expect(result.totals.squares).toBe(1);
+  });
+
+  it('hiç topluluk kaydı yoksa sonuç boş çıkar', () => {
+    const result = applyFilter(nodes, occurrences, endemicIds, {
+      ...EMPTY_FILTER,
+      communityOnly: true,
+    });
+    expect(result.totals.species).toBe(0);
+    expect(result.occurrences).toHaveLength(0);
+  });
+
+  it('diğer filtrelerle birlikte çalışır', () => {
+    // Topluluk + endemik: sevgi çiçeği endemik olduğu için kalmalı
+    expect(
+      applyFilter(nodes, withCommunity, endemicIds, {
+        ...EMPTY_FILTER,
+        communityOnly: true,
+        endemicOnly: true,
+      }).speciesIds,
+    ).toEqual(new Set([sevgi]));
+
+    // Topluluk + İzmir ili: topluluk kaydı İzmir'de
+    expect(
+      applyFilter(nodes, withCommunity, endemicIds, {
+        ...EMPTY_FILTER,
+        communityOnly: true,
+        province: 'İzmir',
+      }).speciesIds,
+    ).toEqual(new Set([sevgi]));
+
+    // Topluluk + Ankara ili: topluluk kaydı Ankara'da DEĞİL, boş çıkmalı
+    expect(
+      applyFilter(nodes, withCommunity, endemicIds, {
+        ...EMPTY_FILTER,
+        communityOnly: true,
+        province: 'Ankara',
+      }).totals.species,
+    ).toBe(0);
+  });
+});
+
+describe('"kayıtlı taksonlar" filtresi topluluk kayıtlarını sayar', () => {
+  /*
+   * `node.occurrenceCount` statik anlık görüntüden gelir ve topluluk katkılarını
+   * içermez. Yalnızca topluluk kaydı olan bir tür, o sayaca bakılsaydı
+   * "kayıtsız" sayılıp elenirdi.
+   */
+  it('yalnızca topluluk kaydı olan tür elenmez', () => {
+    const onlyCommunityForGeven: OccurrenceRecord[] = [
+      {
+        ...occurrence('c9', geven, 38.4, 27.1),
+        davisSquare: 'B1',
+        source: 'community',
+      },
+    ];
+    // Bu dizide geven'in yalnızca topluluk kaydı var; node.occurrenceCount ise
+    // yukarıdaki rollUpCounts'tan 3 geliyor — testin anlamlı olması için
+    // sayaca DEĞİL, gerçek kayıtlara bakıldığını doğruluyoruz.
+    const result = applyFilter(nodes, onlyCommunityForGeven, endemicIds, {
+      ...EMPTY_FILTER,
+      withRecordsOnly: true,
+    });
+    expect(result.speciesIds.has(geven)).toBe(true);
+    // Hiç kaydı olmayan sevgi çiçeği elenmeli.
+    expect(result.speciesIds.has(sevgi)).toBe(false);
+  });
+});

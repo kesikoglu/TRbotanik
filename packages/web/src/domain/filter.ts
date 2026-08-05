@@ -18,6 +18,14 @@ export interface FilterState {
   withRecordsOnly: boolean;
   /** Seçili il; yalnızca bu ilde en az bir kaydı olan türler gösterilir */
   province: string | null;
+  /**
+   * Yalnızca topluluk katkıları: onaylı arazi gözlemleri.
+   *
+   * Hem tür listesini (o türün en az bir topluluk kaydı olmalı) hem de haritada
+   * çizilen noktaları (yalnızca `source: 'community'`) süzer — aksi hâlde filtre
+   * açıkken hâlâ GBIF noktaları görünürdü.
+   */
+  communityOnly: boolean;
 }
 
 export const EMPTY_FILTER: FilterState = {
@@ -26,6 +34,7 @@ export const EMPTY_FILTER: FilterState = {
   endemicOnly: false,
   withRecordsOnly: false,
   province: null,
+  communityOnly: false,
 };
 
 export interface SelectionResult {
@@ -102,11 +111,36 @@ export function applyFilter(
   const intervals = toIntervals(nodes, filter.selectedTaxonIds);
   const queryMatches = matchQuery(nodes, filter.query);
 
+  /*
+   * Önce KAYIT düzeyindeki süzgeçler uygulanır, tür düzeyindekiler bu alt küme
+   * üzerinden türetilir.
+   *
+   * Sıra önemlidir: aksi hâlde filtreler birbirinden bağımsız değerlendirilir ve
+   * tutarsız sonuç verir. Somut örnek: "yalnızca topluluk" + "Ankara" seçildiğinde,
+   * Ankara'da GBIF kaydı ve İzmir'de topluluk kaydı olan bir tür listede kalıp
+   * haritada İzmir'deki noktasıyla çizilirdi — kullanıcı Ankara'yı süzmüşken.
+   */
+  const baseOccurrences = filter.communityOnly
+    ? occurrences.filter((o) => o.source === 'community')
+    : occurrences;
+
   // İl filtresi occurrence düzeyinde tutulur (tür düğümünde il bilgisi yok);
   // bir tür, o ilde en az bir kaydı varsa dahil edilir.
   const provinceSpeciesIds = filter.province
-    ? new Set(occurrences.filter((o) => o.province === filter.province).map((o) => o.taxonId))
+    ? new Set(baseOccurrences.filter((o) => o.province === filter.province).map((o) => o.taxonId))
     : null;
+
+  /*
+   * "Kayıtlı taksonlar" ve "yalnızca topluluk" süzgeçlerinin ikisi de aynı
+   * soruyu sorar: bu türün gösterilebilir bir kaydı var mı? `node.occurrenceCount`
+   * statik anlık görüntüden gelir ve topluluk katkılarını İÇERMEZ — yalnızca
+   * topluluk kaydı olan bir tür o sayaca bakılsaydı "kayıtsız" sayılıp elenirdi.
+   * Bu yüzden gerçek kayıt dizisinden hesaplanıyor.
+   */
+  const speciesWithAnyRecord =
+    filter.withRecordsOnly || filter.communityOnly
+      ? new Set(baseOccurrences.map((o) => o.taxonId))
+      : null;
 
   // 1) Filtreye uyan türleri belirle
   const speciesIds = new Set<number>();
@@ -114,7 +148,7 @@ export function applyFilter(
     if (node.rank !== 'SPECIES') continue;
     if (!isInSelection(node.id, intervals)) continue;
     if (filter.endemicOnly && !endemicIds.has(node.id)) continue;
-    if (filter.withRecordsOnly && node.occurrenceCount === 0) continue;
+    if (speciesWithAnyRecord && !speciesWithAnyRecord.has(node.id)) continue;
     if (provinceSpeciesIds && !provinceSpeciesIds.has(node.id)) continue;
     if (queryMatches && !matchesWithAncestors(nodes, node, queryMatches)) continue;
     speciesIds.add(node.id);
@@ -136,7 +170,7 @@ export function applyFilter(
   const endemicPerSquare = new Map<DavisCode, Set<number>>();
   const recordsPerSquare = new Map<DavisCode, number>();
 
-  for (const occ of occurrences) {
+  for (const occ of baseOccurrences) {
     if (!speciesIds.has(occ.taxonId)) continue;
     filtered.push(occ);
 
