@@ -1,14 +1,16 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { describeError } from '../backend/client';
-import { canContribute, isAdmin, signOut, updateOwnProfile, type SessionUser } from '../backend/auth';
+import { canContribute, canReview, signOut, updateOwnProfile, type SessionUser } from '../backend/auth';
 
 interface Props {
   user: SessionUser;
   onClose: () => void;
   onChanged: () => void;
-  /** Yönetici panelini açar; yalnızca yöneticide gösterilir. */
+  /** Denetim panelini açar; yalnızca küratör/yöneticide gösterilir. */
   onOpenAdmin: () => void;
+  /** Kullanıcının kendi gözlemlerini listeler. */
+  onOpenMine: () => void;
 }
 
 /**
@@ -18,7 +20,7 @@ interface Props {
  * veri giremiyorum" sorusunu, denemesine gerek kalmadan burada yanıtlamak
  * gerekiyor; aksi hâlde sunucudan gelen RLS reddi anlaşılmaz bir hataya dönüşür.
  */
-export function AccountPanel({ user, onClose, onChanged, onOpenAdmin }: Props) {
+export function AccountPanel({ user, onClose, onChanged, onOpenAdmin, onOpenMine }: Props) {
   const { t } = useTranslation();
   const [displayName, setDisplayName] = useState(user.profile?.display_name ?? '');
   const [institution, setInstitution] = useState(user.profile?.institution ?? '');
@@ -158,7 +160,19 @@ export function AccountPanel({ user, onClose, onChanged, onOpenAdmin }: Props) {
               </button>
             </form>
 
-            {isAdmin(user) && (
+            {canContribute(user) && (
+              <button
+                type="button"
+                className="button button--block"
+                onClick={onOpenMine}
+                data-testid="account-open-mine"
+              >
+                {t('review.myObservations')}
+              </button>
+            )}
+
+            {/* Denetim paneli küratöre de açık — gözlem onaylamak onun işi. */}
+            {canReview(user) && (
               <button
                 type="button"
                 className="button button--block"

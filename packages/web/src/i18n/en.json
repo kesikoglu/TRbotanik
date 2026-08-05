@@ -258,7 +258,7 @@
     "gotIt": "Got it"
   },
   "admin": {
-    "open": "Admin panel",
+    "open": "Review panel",
     "title": "User management",
     "pendingCount": "{{count}} account(s) awaiting approval",
     "noPending": "No accounts awaiting approval.",
@@ -271,7 +271,11 @@
     "approve": "Approve",
     "suspend": "Suspend",
     "reinstate": "Reinstate",
-    "you": "you"
+    "you": "you",
+    "tabObservations": "Observations",
+    "tabUsers": "Users",
+    "reviewSubtitle": "Field observations awaiting review.",
+    "reviewTitle": "Observation review"
   },
   "observation": {
     "open": "Add observation",
@@ -334,6 +338,28 @@
       "denied": "Location permission denied. You can allow it in browser settings.",
       "unavailable": "Could not get location. Try again in an open area.",
       "timeout": "Getting location timed out. Please try again."
+    }
+  },
+  "review": {
+    "myObservations": "My observations",
+    "myObservationsSubtitle": "Records you submitted and their status.",
+    "emptyQueue": "No observations awaiting review.",
+    "emptyMine": "You have not submitted any observations yet.",
+    "approve": "Approve",
+    "reject": "Reject",
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "rejectReason": "Reason for rejection (shown to the contributor)",
+    "confirmDelete": "This observation will be permanently deleted. Are you sure?",
+    "date": "Date",
+    "coordinates": "Coordinates",
+    "contributor": "Contributor",
+    "reviewNote": "Reviewer note",
+    "status": {
+      "pending": "Awaiting review",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "suspended": "Suspended"
     }
   }
 }

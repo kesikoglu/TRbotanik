@@ -1430,6 +1430,68 @@ button {
   background: rgba(6, 10, 8, 0.8);
 }
 
+/* ── Gözlem denetim kartları ──────────────────────────────────────── */
+
+.review-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.review-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-3);
+  background: var(--c-surface-2);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-md);
+}
+
+.review-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-2);
+}
+
+.review-card__sci {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.review-card__vern {
+  margin: 1px 0 0;
+  font-size: 12.5px;
+  color: var(--c-text-muted);
+}
+
+/* Olgular iki sütun; dar ekranda tek sütuna iner (aşağıdaki telefon bloğu). */
+.review-card__facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px var(--sp-3);
+  margin: 0;
+}
+
+.review-card__fact dt {
+  font-size: 11px;
+  color: var(--c-text-faint);
+  letter-spacing: 0.02em;
+}
+
+.review-card__fact dd {
+  margin: 0;
+  font-size: 13px;
+  word-break: break-word;
+}
+
 /* ── Üst çubuktaki hesap düğmesi ──────────────────────────────────── */
 
 .account-button {
@@ -1562,5 +1624,10 @@ button {
     display: block;
     overflow-x: auto;
     white-space: nowrap;
+  }
+
+  /* Denetim kartındaki olgular telefonda tek sütun. */
+  .review-card__facts {
+    grid-template-columns: 1fr;
   }
 }

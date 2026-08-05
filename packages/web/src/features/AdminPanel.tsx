@@ -2,13 +2,18 @@ import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { describeError } from '../backend/client';
 import { approveUser, listProfiles, setUserRole, setUserStatus, suspendUser } from '../backend/admin';
-import type { SessionUser } from '../backend/auth';
+import { isAdmin, type SessionUser } from '../backend/auth';
 import type { Profile, UserRole } from '../backend/types';
+import { ObservationReview } from './ObservationReview';
 
 interface Props {
   user: SessionUser;
   onClose: () => void;
+  /** Açılışta hangi sekme etkin olsun. */
+  initialTab?: Tab;
 }
+
+type Tab = 'observations' | 'users';
 
 const ROLES: UserRole[] = ['contributor', 'curator', 'admin'];
 
@@ -17,11 +22,13 @@ const ROLES: UserRole[] = ['contributor', 'curator', 'admin'];
  *
  * Onay bekleyenler listenin başındadır: yöneticinin buraya gelme sebebi odur.
  */
-export function AdminPanel({ user, onClose }: Props) {
+export function AdminPanel({ user, onClose, initialTab = 'observations' }: Props) {
   const { t } = useTranslation();
+  const [tab, setTab] = useState<Tab>(initialTab);
   const [profiles, setProfiles] = useState<Profile[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const showUsersTab = isAdmin(user);
 
   const load = useCallback(async () => {
     setError(null);
@@ -34,8 +41,10 @@ export function AdminPanel({ user, onClose }: Props) {
   }, []);
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    // Kullanıcı listesi yalnızca o sekmeye geçildiğinde çekilir; küratör
+    // (yönetici olmayan) bu isteği hiç yapmaz.
+    if (tab === 'users' && showUsersTab) void load();
+  }, [load, tab, showUsersTab]);
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -73,11 +82,15 @@ export function AdminPanel({ user, onClose }: Props) {
       <div className="modal modal--wide" onClick={(event) => event.stopPropagation()}>
         <header className="modal__header">
           <div>
-            <h2 className="modal__title">{t('admin.title')}</h2>
+            <h2 className="modal__title">
+              {tab === 'observations' ? t('admin.reviewTitle') : t('admin.title')}
+            </h2>
             <p className="modal__subtitle">
-              {pendingCount > 0
-                ? t('admin.pendingCount', { count: pendingCount })
-                : t('admin.noPending')}
+              {tab === 'observations'
+                ? t('admin.reviewSubtitle')
+                : pendingCount > 0
+                  ? t('admin.pendingCount', { count: pendingCount })
+                  : t('admin.noPending')}
             </p>
           </div>
           <button
@@ -91,6 +104,36 @@ export function AdminPanel({ user, onClose }: Props) {
           </button>
         </header>
 
+        <div className="modal__tabs" role="tablist">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === 'observations'}
+            className={`modal__tab${tab === 'observations' ? ' modal__tab--active' : ''}`}
+            onClick={() => setTab('observations')}
+            data-testid="admin-tab-observations"
+          >
+            {t('admin.tabObservations')}
+          </button>
+          {showUsersTab && (
+            <button
+              type="button"
+              role="tab"
+              aria-selected={tab === 'users'}
+              className={`modal__tab${tab === 'users' ? ' modal__tab--active' : ''}`}
+              onClick={() => setTab('users')}
+              data-testid="admin-tab-users"
+            >
+              {t('admin.tabUsers')}
+            </button>
+          )}
+        </div>
+
+        {tab === 'observations' ? (
+          <div className="modal__body">
+            <ObservationReview user={user} scope="queue" />
+          </div>
+        ) : (
         <div className="modal__body">
           {error && (
             <p className="form__message form__message--error" role="alert" data-testid="admin-error">
@@ -195,6 +238,7 @@ export function AdminPanel({ user, onClose }: Props) {
             </table>
           )}
         </div>
+        )}
       </div>
     </div>
   );

@@ -258,7 +258,7 @@
     "gotIt": "Anladım"
   },
   "admin": {
-    "open": "Yönetici paneli",
+    "open": "Denetim paneli",
     "title": "Kullanıcı yönetimi",
     "pendingCount": "{{count}} hesap onay bekliyor",
     "noPending": "Onay bekleyen hesap yok.",
@@ -271,7 +271,11 @@
     "approve": "Onayla",
     "suspend": "Askıya al",
     "reinstate": "Askıyı kaldır",
-    "you": "siz"
+    "you": "siz",
+    "tabObservations": "Gözlemler",
+    "tabUsers": "Kullanıcılar",
+    "reviewSubtitle": "Onay bekleyen arazi gözlemleri.",
+    "reviewTitle": "Gözlem denetimi"
   },
   "observation": {
     "open": "Gözlem ekle",
@@ -334,6 +338,28 @@
       "denied": "Konum izni reddedildi. Tarayıcı ayarlarından izin verebilirsiniz.",
       "unavailable": "Konum alınamadı. Açık alanda tekrar deneyin.",
       "timeout": "Konum alma zaman aşımına uğradı. Tekrar deneyin."
+    }
+  },
+  "review": {
+    "myObservations": "Gözlemlerim",
+    "myObservationsSubtitle": "Gönderdiğiniz kayıtlar ve durumları.",
+    "emptyQueue": "Onay bekleyen gözlem yok.",
+    "emptyMine": "Henüz gözlem göndermediniz.",
+    "approve": "Onayla",
+    "reject": "Reddet",
+    "delete": "Sil",
+    "cancel": "Vazgeç",
+    "rejectReason": "Ret gerekçesi (kullanıcıya gösterilir)",
+    "confirmDelete": "Bu gözlem kalıcı olarak silinecek. Emin misiniz?",
+    "date": "Tarih",
+    "coordinates": "Koordinat",
+    "contributor": "Ekleyen",
+    "reviewNote": "Denetçi notu",
+    "status": {
+      "pending": "Onay bekliyor",
+      "approved": "Onaylı",
+      "rejected": "Reddedildi",
+      "suspended": "Askıda"
     }
   }
 }

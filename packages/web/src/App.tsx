@@ -16,7 +16,8 @@ import { AuthPanel } from './features/AuthPanel';
 import { AccountPanel } from './features/AccountPanel';
 import { AdminPanel } from './features/AdminPanel';
 import { ObservationForm } from './features/ObservationForm';
-import { canContribute } from './backend/auth';
+import { ObservationReview } from './features/ObservationReview';
+import { canContribute, type SessionUser } from './backend/auth';
 import { isBackendConfigured } from './backend/config';
 import { useSession, type SessionState } from './backend/useSession';
 import { setLanguage, SUPPORTED_LANGUAGES, type Language } from './i18n';
@@ -191,7 +192,7 @@ function Stat({ value, label }: { value: number | string; label: string }) {
  */
 function AccountButton({ session, nodes }: { session: SessionState; nodes: TaxonNode[] }) {
   const { t } = useTranslation();
-  const [panel, setPanel] = useState<'none' | 'auth' | 'account' | 'admin' | 'observation'>('none');
+  const [panel, setPanel] = useState<'none' | 'auth' | 'account' | 'admin' | 'observation' | 'mine'>('none');
 
   if (!isBackendConfigured()) return null;
   // İlk oturum sorgusu sürerken düğmeyi çizmiyoruz: aksi hâlde giriş yapmış bir
@@ -240,6 +241,7 @@ function AccountButton({ session, nodes }: { session: SessionState; nodes: Taxon
           onClose={() => setPanel('none')}
           onChanged={() => void session.refresh()}
           onOpenAdmin={() => setPanel('admin')}
+          onOpenMine={() => setPanel('mine')}
         />
       )}
       {panel === 'admin' && user && (
@@ -248,6 +250,45 @@ function AccountButton({ session, nodes }: { session: SessionState; nodes: Taxon
       {panel === 'observation' && user && (
         <ObservationForm user={user} nodes={nodes} onClose={() => setPanel('none')} />
       )}
+      {panel === 'mine' && user && (
+        <MyObservationsPanel user={user} onClose={() => setPanel('none')} />
+      )}
     </>
+  );
+}
+
+/** Kullanıcının kendi gözlemleri — durumlarını görür, bekleyenleri silebilir. */
+function MyObservationsPanel({ user, onClose }: { user: SessionUser; onClose: () => void }) {
+  const { t } = useTranslation();
+  return (
+    <div
+      className="modal-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-label={t('review.myObservations')}
+      onClick={onClose}
+      data-testid="my-observations-panel"
+    >
+      <div className="modal modal--wide" onClick={(event) => event.stopPropagation()}>
+        <header className="modal__header">
+          <div>
+            <h2 className="modal__title">{t('review.myObservations')}</h2>
+            <p className="modal__subtitle">{t('review.myObservationsSubtitle')}</p>
+          </div>
+          <button
+            type="button"
+            className="icon-button"
+            onClick={onClose}
+            aria-label={t('detail.close')}
+            data-testid="my-observations-close"
+          >
+            ×
+          </button>
+        </header>
+        <div className="modal__body">
+          <ObservationReview user={user} scope="mine" />
+        </div>
+      </div>
+    </div>
   );
 }
