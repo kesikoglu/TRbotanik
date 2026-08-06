@@ -259,7 +259,14 @@
       "suspended": "Askıda"
     },
     "welcomeTitle": "Hoş geldiniz",
-    "gotIt": "Anladım"
+    "gotIt": "Anladım",
+    "resetPasswordTitle": "Yeni şifre oluştur",
+    "resetPasswordSubtitle": "Şifre sıfırlama bağlantısıyla giriş yaptınız. Devam etmeden önce yeni bir şifre belirlemeniz gerekiyor.",
+    "newPassword": "Yeni şifre",
+    "confirmPassword": "Yeni şifre (tekrar)",
+    "passwordMismatch": "Şifreler eşleşmiyor.",
+    "savePassword": "Şifreyi kaydet",
+    "cancelSignOut": "Vazgeç, çıkış yap"
   },
   "admin": {
     "open": "Denetim paneli",

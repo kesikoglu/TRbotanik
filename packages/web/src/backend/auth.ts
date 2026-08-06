@@ -62,6 +62,17 @@ export async function requestPasswordReset(email: string): Promise<void> {
   if (error) throw error;
 }
 
+/**
+ * Şifre sıfırlama e-postasındaki linke tıklandıktan sonra yeni şifreyi kaydeder.
+ * Yalnızca `PASSWORD_RECOVERY` oturumunda (bkz. useSession) anlamlıdır — bkz.
+ * o hook'taki not.
+ */
+export async function updatePassword(newPassword: string): Promise<void> {
+  const supabase = await getSupabase();
+  const { error } = await supabase.auth.updateUser({ password: newPassword });
+  if (error) throw error;
+}
+
 /** Oturumdaki kullanıcıyı profiliyle birlikte döner; oturum yoksa null. */
 export async function getSessionUser(): Promise<SessionUser | null> {
   const supabase = await getSupabase();
@@ -102,11 +113,17 @@ export async function updateOwnProfile(patch: {
 
 /**
  * Oturum değişikliklerini dinler (giriş, çıkış, sekmeler arası eşitleme,
- * jeton yenileme). Aboneliği iptal eden fonksiyonu döner.
+ * jeton yenileme, şifre kurtarma). Aboneliği iptal eden fonksiyonu döner.
+ *
+ * Olay adı çağırana geçirilir — `PASSWORD_RECOVERY` özel olarak önemlidir:
+ * kullanıcı e-postadaki sıfırlama linkine tıkladığında Supabase bu olayla
+ * birlikte GEÇERLİ bir oturum kurar. Bu olay ayrıca ele alınmazsa kullanıcı
+ * yeni bir şifre belirlemeden doğrudan giriş yapmış gibi görünür — gerçekte
+ * yaşanan bir hataydı (bkz. useSession.ts'teki `passwordRecovery`).
  */
-export async function onAuthChange(callback: () => void): Promise<() => void> {
+export async function onAuthChange(callback: (event: string) => void): Promise<() => void> {
   const supabase = await getSupabase();
-  const { data } = supabase.auth.onAuthStateChange(() => callback());
+  const { data } = supabase.auth.onAuthStateChange((event) => callback(event));
   return () => data.subscription.unsubscribe();
 }
 

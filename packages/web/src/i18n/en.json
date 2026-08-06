@@ -259,7 +259,14 @@
       "suspended": "Suspended"
     },
     "welcomeTitle": "Welcome",
-    "gotIt": "Got it"
+    "gotIt": "Got it",
+    "resetPasswordTitle": "Create a new password",
+    "resetPasswordSubtitle": "You signed in with a password reset link. You need to set a new password before continuing.",
+    "newPassword": "New password",
+    "confirmPassword": "New password (again)",
+    "passwordMismatch": "Passwords don't match.",
+    "savePassword": "Save password",
+    "cancelSignOut": "Cancel, sign out"
   },
   "admin": {
     "open": "Review panel",

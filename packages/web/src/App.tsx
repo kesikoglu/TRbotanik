@@ -13,6 +13,7 @@ import { TaxonomySidebar } from './features/TaxonomySidebar';
 import { DetailPane } from './features/DetailPane';
 import { ProvinceTable } from './features/ProvinceTable';
 import { AuthPanel } from './features/AuthPanel';
+import { ResetPasswordPanel } from './features/ResetPasswordPanel';
 import { AccountPanel } from './features/AccountPanel';
 import { AdminPanel } from './features/AdminPanel';
 import { ObservationForm } from './features/ObservationForm';
@@ -267,6 +268,19 @@ function AccountButton({ session, nodes }: { session: SessionState; nodes: Taxon
       )}
       {panel === 'mine' && user && (
         <MyObservationsPanel user={user} onClose={() => setPanel('none')} />
+      )}
+
+      {/* En üstte render edilir: şifre sıfırlama oturumu sürerken kullanıcı normal
+          giriş yapmış gibi haritayla veya diğer panellerle etkileşemesin — yeni
+          şifre belirlemeden geçmenin yolu olmamalı (bkz. useSession.passwordRecovery). */}
+      {session.passwordRecovery && (
+        <ResetPasswordPanel
+          onDone={() => {
+            session.clearPasswordRecovery();
+            void session.refresh();
+            setPanel('none');
+          }}
+        />
       )}
     </>
   );

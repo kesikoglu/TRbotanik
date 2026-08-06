@@ -8,6 +8,15 @@ export interface SessionState {
   loading: boolean;
   /** Profil güncellendikten veya onay alındıktan sonra elle tazelemek için. */
   refresh: () => Promise<void>;
+  /**
+   * true iken elimizdeki oturum bir şifre sıfırlama linkinden geliyor — kullanıcı
+   * henüz yeni bir şifre BELİRLEMEDİ. Bu durumda uygulama onu normal giriş yapmış
+   * gibi göstermemeli: gerçek bir kullanıcı geri bildiriminden gelen düzeltme
+   * ("Reset password basınca direkt sayfaya girdim, yeni şifre oluşturmadan").
+   */
+  passwordRecovery: boolean;
+  /** Yeni şifre kaydedildikten (veya kullanıcı vazgeçtikten) sonra bayrağı indirir. */
+  clearPasswordRecovery: () => void;
 }
 
 /**
@@ -20,6 +29,7 @@ export interface SessionState {
 export function useSession(): SessionState {
   const [user, setUser] = useState<SessionUser | null>(null);
   const [loading, setLoading] = useState(isBackendConfigured());
+  const [passwordRecovery, setPasswordRecovery] = useState(false);
 
   const refresh = useCallback(async () => {
     if (!isBackendConfigured()) return;
@@ -39,7 +49,8 @@ export function useSession(): SessionState {
     let cancelled = false;
 
     void refresh();
-    void onAuthChange(() => {
+    void onAuthChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') setPasswordRecovery(true);
       if (!cancelled) void refresh();
     }).then((fn) => {
       // Abonelik kurulmadan bileşen söküldüyse hemen iptal et.
@@ -53,5 +64,11 @@ export function useSession(): SessionState {
     };
   }, [refresh]);
 
-  return { user, loading, refresh };
+  return {
+    user,
+    loading,
+    refresh,
+    passwordRecovery,
+    clearPasswordRecovery: () => setPasswordRecovery(false),
+  };
 }
