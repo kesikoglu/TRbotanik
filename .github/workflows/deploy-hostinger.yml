@@ -1,0 +1,47 @@
+name: Hostinger için derle ve dala yayınla
+
+# Bu dala her push'ta uygulama yeniden derlenip `hostinger-deploy` dalına
+# pushlanır. GitHub Pages deploy'u kendi tarafında (deployment_queued) takılıp
+# zaman aşımına uğradığı için eklendi — Hostinger'ın Git özelliği bu dalı
+# doğrudan çeker, herhangi bir build adımı çalıştırmaz; bu yüzden derleme
+# burada, GitHub Actions'ta yapılıp SONUÇ (statik dosyalar) ayrı bir dala
+# konur. Kök domainde barındırılacağı varsayılır (GH_PAGES_BASE verilmez,
+# temel yol "/" olur) — bkz. plum-dove-921331.hostingersite.com.
+on:
+  push:
+    branches:
+      - claude/turkiye-botanik-haritasi-di1550
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Depoyu al
+        uses: actions/checkout@v4
+
+      - name: Node.js kur
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Bağımlılıkları kur
+        run: npm ci
+
+      - name: Veri setini üret
+        run: npm run data:all
+
+      - name: Uygulamayı derle
+        run: npm run build -w @trbotanik/web
+
+      - name: hostinger-deploy dalına pushla
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: packages/web/dist
+          publish_branch: hostinger-deploy
+          force_orphan: true
