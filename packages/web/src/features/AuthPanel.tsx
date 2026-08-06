@@ -110,7 +110,9 @@ export function AuthPanel({ onClose, onSignedIn }: Props) {
       role="dialog"
       aria-modal="true"
       aria-label={title}
-      onClick={onClose}
+      /* Arka plana tıklayınca KAPANMAZ (bilerek): kayıt formu uzun, kullanıcı geri
+         bildirimine göre doldururken kolayca form dışına tıklanıp ekran kapanıyordu
+         ve girilenler kayboluyordu. Kapatmak için yalnızca × düğmesi kullanılır. */
       data-testid="auth-panel"
     >
       <div className="modal" onClick={(event) => event.stopPropagation()}>
