@@ -293,6 +293,7 @@
     "useMyLocation": "📍 Use my location",
     "locating": "Getting location…",
     "manualHint": "If location is unavailable, you can enter coordinates manually.",
+    "editManually": "Edit coordinates manually",
     "latitude": "Latitude",
     "longitude": "Longitude",
     "davisSquare": "Davis square",

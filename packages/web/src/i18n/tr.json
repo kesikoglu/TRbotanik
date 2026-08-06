@@ -293,6 +293,7 @@
     "useMyLocation": "📍 Konumumu al",
     "locating": "Konum alınıyor…",
     "manualHint": "Konum alınamıyorsa koordinatı elle girebilirsiniz.",
+    "editManually": "Koordinatı elle düzenle",
     "latitude": "Enlem",
     "longitude": "Boylam",
     "davisSquare": "Davis karesi",

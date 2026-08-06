@@ -340,11 +340,35 @@ export function ObservationForm({ user, nodes, onClose }: Props) {
               )}
 
               {fix && (
-                <p className="form__message form__message--info" data-testid="obs-fix">
-                  {formatCoordinate(fix.lat)}, {formatCoordinate(fix.lon)}
-                  {fix.accuracyM != null && ` · ±${fix.accuracyM} m`}
-                  {square && ` · ${t('observation.davisSquare')}: ${square}`}
-                </p>
+                <>
+                  <p className="form__message form__message--info" data-testid="obs-fix">
+                    {formatCoordinate(fix.lat)}, {formatCoordinate(fix.lon)}
+                    {fix.accuracyM != null && ` · ±${fix.accuracyM} m`}
+                    {square && ` · ${t('observation.davisSquare')}: ${square}`}
+                  </p>
+                  {touched && errors.coordinate_uncertainty_m && (
+                    <span className="field__error" data-testid="obs-uncertainty-error">
+                      {t(errors.coordinate_uncertainty_m)}
+                    </span>
+                  )}
+                  {/* Masaüstünde GPS donanımı yok; tarayıcı IP/Wi-Fi tabanlı bir konuma
+                      düşer ve doğruluk yarıçapı yüz kilometreleri bulabilir (bkz. kullanıcı
+                      geri bildirimi — bu durumda Gönder hiçbir şey yapmıyormuş gibi
+                      görünüyordu, çünkü hata yalnızca yukarıdaki mesajda görünüyordu ve
+                      koordinatı elle düzeltmenin bir yolu yoktu). */}
+                  <button
+                    type="button"
+                    className="chip chip--clear"
+                    onClick={() => {
+                      setManualLat(String(fix.lat));
+                      setManualLon(String(fix.lon));
+                      setFix(null);
+                    }}
+                    data-testid="obs-edit-manually"
+                  >
+                    {t('observation.editManually')}
+                  </button>
+                </>
               )}
 
               {!fix && (
