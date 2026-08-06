@@ -22,6 +22,8 @@ import { canContribute, type SessionUser } from './backend/auth';
 import { isBackendConfigured } from './backend/config';
 import { useSession, type SessionState } from './backend/useSession';
 import { useCommunityOccurrences } from './backend/useCommunityOccurrences';
+import { useSpeciesPhotos } from './backend/useSpeciesPhotos';
+import { mergeSpeciesPhotosIntoDetails } from './backend/speciesPhotos';
 import { setLanguage, SUPPORTED_LANGUAGES, type Language } from './i18n';
 import type { Dataset } from './data/dataset';
 
@@ -88,6 +90,14 @@ function Workspace({ dataset }: { dataset: Dataset }) {
     [dataset.nodes, occurrences, endemicIds, filter],
   );
 
+  // Küratör onayıyla tür galerisine yükseltilmiş topluluk fotoğrafları — statik
+  // veri setini DEĞİŞTİRMEZ, yalnızca ilgili taksonların `images` dizisine eklenir.
+  const speciesPhotos = useSpeciesPhotos(dataset.nodes);
+  const details = useMemo(
+    () => mergeSpeciesPhotosIntoDetails(dataset.details, speciesPhotos.photosByTaxonId),
+    [dataset.details, speciesPhotos.photosByTaxonId],
+  );
+
   const detailOpen = selectedSpeciesId !== null || selectedSquare !== null;
   const familyCount = dataset.byRank.FAMILY.length;
   const session = useSession();
@@ -125,7 +135,11 @@ function Workspace({ dataset }: { dataset: Dataset }) {
           ))}
         </div>
 
-        <AccountButton session={session} nodes={dataset.nodes} />
+        <AccountButton
+          session={session}
+          nodes={dataset.nodes}
+          onGalleryChanged={() => void speciesPhotos.refresh()}
+        />
       </header>
 
       {dataset.manifest.mode === 'fixture' && (
@@ -168,7 +182,7 @@ function Workspace({ dataset }: { dataset: Dataset }) {
         {detailOpen && (
           <DetailPane
             nodes={dataset.nodes}
-            details={dataset.details}
+            details={details}
             endemicIds={endemicIds}
             selection={selection}
           />
@@ -206,7 +220,15 @@ function Stat({ value, label }: { value: number | string; label: string }) {
  * bir harita olarak eksiksiz çalışmaya devam eder (e2e testleri ve çevrimdışı
  * gösterimler bu yola dayanır).
  */
-function AccountButton({ session, nodes }: { session: SessionState; nodes: TaxonNode[] }) {
+function AccountButton({
+  session,
+  nodes,
+  onGalleryChanged,
+}: {
+  session: SessionState;
+  nodes: TaxonNode[];
+  onGalleryChanged: () => void;
+}) {
   const { t } = useTranslation();
   const [panel, setPanel] = useState<'none' | 'auth' | 'account' | 'admin' | 'observation' | 'mine'>('none');
 
@@ -261,7 +283,7 @@ function AccountButton({ session, nodes }: { session: SessionState; nodes: Taxon
         />
       )}
       {panel === 'admin' && user && (
-        <AdminPanel user={user} onClose={() => setPanel('none')} />
+        <AdminPanel user={user} onClose={() => setPanel('none')} onGalleryChanged={onGalleryChanged} />
       )}
       {panel === 'observation' && user && (
         <ObservationForm user={user} nodes={nodes} onClose={() => setPanel('none')} />

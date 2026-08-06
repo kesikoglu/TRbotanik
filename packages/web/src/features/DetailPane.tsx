@@ -233,6 +233,11 @@ function ImageCard({
         {image.isPlaceholder
           ? t('image.placeholder')
           : `${image.photographer ?? '—'} · ${image.license}`}
+        {/* Topluluk katkısı, akademik doğrulanmış referans veriyle KARIŞTIRILMASIN
+            diye ayrı bir rozetle işaretlenir (bkz. speciesPhotos.ts). */}
+        {image.source === 'community' && (
+          <span className="badge badge--community">{t('image.communityContribution')}</span>
+        )}
       </figcaption>
     </figure>
   );

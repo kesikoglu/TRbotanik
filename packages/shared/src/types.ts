@@ -202,7 +202,13 @@ export interface PlantImage {
   licenseUrl: string | null;
   /** Görselin altında gösterilmesi zorunlu, önceden oluşturulmuş atıf metni */
   attributionText: string;
-  source: 'inaturalist' | 'wikimedia' | 'gbif' | 'curated' | 'placeholder';
+  /**
+   * `community`: onaylanmış bir topluluk gözlem fotoğrafının küratör kararıyla
+   * galeriye yükseltilmesiyle oluşur (bkz. backend/speciesPhotos.ts). Diğer
+   * kaynaklardan farklı olarak akademik doğrulanmış REFERANS veri DEĞİLDİR —
+   * galeri kartında ayrı bir rozetle işaretlenir.
+   */
+  source: 'inaturalist' | 'wikimedia' | 'gbif' | 'curated' | 'placeholder' | 'community';
   sourceUrl: string;
   /** Yerel üretilmiş yer tutucu görsel mi (fixture modu) */
   isPlaceholder: boolean;

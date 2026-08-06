@@ -101,7 +101,12 @@ export async function uploadPhoto(params: {
   return path;
 }
 
+/** Herhangi bir kovadaki bir yoldan herkese açık görüntüleme adresi üretir. */
+export function publicStorageUrl(supabaseUrl: string, bucket: string, storagePath: string): string {
+  return `${supabaseUrl}/storage/v1/object/public/${bucket}/${storagePath}`;
+}
+
 /** Depolama yolundan herkese açık görüntüleme adresi üretir. */
 export function publicPhotoUrl(supabaseUrl: string, storagePath: string): string {
-  return `${supabaseUrl}/storage/v1/object/public/${PHOTO_BUCKET}/${storagePath}`;
+  return publicStorageUrl(supabaseUrl, PHOTO_BUCKET, storagePath);
 }

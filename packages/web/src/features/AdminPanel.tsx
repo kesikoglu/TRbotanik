@@ -11,9 +11,11 @@ interface Props {
   onClose: () => void;
   /** Açılışta hangi sekme etkin olsun. */
   initialTab?: Tab;
+  /** Bir fotoğraf tür galerisine yükseltildiğinde/kaldırıldığında çağrılır. */
+  onGalleryChanged: () => void;
 }
 
-type Tab = 'observations' | 'users';
+type Tab = 'observations' | 'approved' | 'users';
 
 const ROLES: UserRole[] = ['contributor', 'curator', 'admin'];
 
@@ -22,7 +24,7 @@ const ROLES: UserRole[] = ['contributor', 'curator', 'admin'];
  *
  * Onay bekleyenler listenin başındadır: yöneticinin buraya gelme sebebi odur.
  */
-export function AdminPanel({ user, onClose, initialTab = 'observations' }: Props) {
+export function AdminPanel({ user, onClose, initialTab = 'observations', onGalleryChanged }: Props) {
   const { t } = useTranslation();
   const [tab, setTab] = useState<Tab>(initialTab);
   const [profiles, setProfiles] = useState<Profile[] | null>(null);
@@ -83,14 +85,20 @@ export function AdminPanel({ user, onClose, initialTab = 'observations' }: Props
         <header className="modal__header">
           <div>
             <h2 className="modal__title">
-              {tab === 'observations' ? t('admin.reviewTitle') : t('admin.title')}
+              {tab === 'observations'
+                ? t('admin.reviewTitle')
+                : tab === 'approved'
+                  ? t('admin.tabApproved')
+                  : t('admin.title')}
             </h2>
             <p className="modal__subtitle">
               {tab === 'observations'
                 ? t('admin.reviewSubtitle')
-                : pendingCount > 0
-                  ? t('admin.pendingCount', { count: pendingCount })
-                  : t('admin.noPending')}
+                : tab === 'approved'
+                  ? t('admin.approvedSubtitle')
+                  : pendingCount > 0
+                    ? t('admin.pendingCount', { count: pendingCount })
+                    : t('admin.noPending')}
             </p>
           </div>
           <button
@@ -115,6 +123,16 @@ export function AdminPanel({ user, onClose, initialTab = 'observations' }: Props
           >
             {t('admin.tabObservations')}
           </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === 'approved'}
+            className={`modal__tab${tab === 'approved' ? ' modal__tab--active' : ''}`}
+            onClick={() => setTab('approved')}
+            data-testid="admin-tab-approved"
+          >
+            {t('admin.tabApproved')}
+          </button>
           {showUsersTab && (
             <button
               type="button"
@@ -131,7 +149,11 @@ export function AdminPanel({ user, onClose, initialTab = 'observations' }: Props
 
         {tab === 'observations' ? (
           <div className="modal__body">
-            <ObservationReview user={user} scope="queue" />
+            <ObservationReview user={user} scope="queue" onGalleryChanged={onGalleryChanged} />
+          </div>
+        ) : tab === 'approved' ? (
+          <div className="modal__body">
+            <ObservationReview user={user} scope="approved" onGalleryChanged={onGalleryChanged} />
           </div>
         ) : (
         <div className="modal__body">

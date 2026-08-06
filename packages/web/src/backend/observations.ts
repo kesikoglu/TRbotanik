@@ -101,6 +101,24 @@ export async function listApprovedObservations(): Promise<ObservationWithRelatio
   return (data ?? []) as ObservationWithRelations[];
 }
 
+/**
+ * Onaylı gözlemler — küratörün tür galerisine yükseltilecek fotoğraf aramak
+ * için gözden geçirdiği görünüm. `listApprovedObservations`'tan farkı:
+ * katkıda bulunanın adını da getirir (galeri atfı için gerekli) ve yalnızca
+ * haritanın ihtiyaç duymadığı bir alan ekler diye halka açık harita sorgusuna
+ * karıştırılmaz.
+ */
+export async function listApprovedObservationsForCuration(): Promise<ObservationWithRelations[]> {
+  const supabase = await getSupabase();
+  const { data, error } = await supabase
+    .from('observations')
+    .select('*, observation_photos(*), profiles!observations_created_by_fkey(display_name, institution)')
+    .eq('status', 'approved')
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as ObservationWithRelations[];
+}
+
 /** Gözlemi denetler (onayla/reddet/askıya al). Küratör ve yönetici yetkisi gerekir. */
 export async function reviewObservation(
   observationId: string,

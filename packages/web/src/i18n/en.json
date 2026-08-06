@@ -198,7 +198,8 @@
     "open": "Enlarge",
     "prev": "Previous image",
     "next": "Next image",
-    "countOf": "{{current}}/{{total}}"
+    "countOf": "{{current}}/{{total}}",
+    "communityContribution": "Community contribution"
   },
   "provinceTable": {
     "title": "Plants of {{province}}",
@@ -285,6 +286,8 @@
     "you": "you",
     "tabObservations": "Observations",
     "tabUsers": "Users",
+    "tabApproved": "Approved records",
+    "approvedSubtitle": "Promote approved observation photos to the species gallery.",
     "reviewSubtitle": "Field observations awaiting review.",
     "reviewTitle": "Observation review"
   },
@@ -357,6 +360,10 @@
     "myObservationsSubtitle": "Records you submitted and their status.",
     "emptyQueue": "No observations awaiting review.",
     "emptyMine": "You have not submitted any observations yet.",
+    "emptyApproved": "No approved observations.",
+    "promoteToGallery": "Add to species gallery",
+    "inGallery": "✓ In gallery",
+    "removeFromGallery": "Remove from gallery",
     "approve": "Approve",
     "reject": "Reject",
     "delete": "Delete",

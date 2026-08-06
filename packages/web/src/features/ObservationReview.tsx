@@ -5,17 +5,29 @@ import { describeError } from '../backend/client';
 import { canReview, isAdmin, type SessionUser } from '../backend/auth';
 import {
   deleteOwnObservation,
+  listApprovedObservationsForCuration,
   listMyObservations,
   listPendingObservations,
   reviewObservation,
 } from '../backend/observations';
 import { publicPhotoUrl } from '../backend/photos';
-import type { ObservationWithRelations } from '../backend/types';
+import {
+  listPromotedPhotosBySourceId,
+  promotePhotoToGallery,
+  removeSpeciesPhoto,
+} from '../backend/speciesPhotos';
+import type { ObservationPhoto, ObservationWithRelations } from '../backend/types';
 
 interface Props {
   user: SessionUser;
-  /** `queue`: denetlenecek kayıtlar (küratör/yönetici) · `mine`: kendi kayıtlarım */
-  scope: 'queue' | 'mine';
+  /**
+   * `queue`: denetlenecek (bekleyen) kayıtlar · `mine`: kendi kayıtlarım ·
+   * `approved`: küratörün tür galerisine fotoğraf yükseltmek için gözden
+   * geçirdiği onaylı kayıtlar.
+   */
+  scope: 'queue' | 'mine' | 'approved';
+  /** Bir fotoğraf tür galerisine yükseltildiğinde/kaldırıldığında çağrılır. */
+  onGalleryChanged?: () => void;
 }
 
 /**
@@ -24,18 +36,33 @@ interface Props {
  * İkisi aynı bileşen çünkü gösterilen bilgi aynı; yalnızca hangi kayıtların
  * çekildiği ve hangi eylemlerin sunulduğu değişiyor.
  */
-export function ObservationReview({ user, scope }: Props) {
+export function ObservationReview({ user, scope, onGalleryChanged }: Props) {
   const { t } = useTranslation();
   const [rows, setRows] = useState<ObservationWithRelations[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [noteFor, setNoteFor] = useState<string | null>(null);
   const [note, setNote] = useState('');
+  // Özgün fotoğraf id'sinden galeri satırının id'sine — yalnızca `approved`
+  // kapsamında dolar (bkz. load()).
+  const [promoted, setPromoted] = useState<Map<string, string>>(new Map());
+  const [busyPhotoId, setBusyPhotoId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setError(null);
     try {
-      setRows(scope === 'queue' ? await listPendingObservations() : await listMyObservations());
+      if (scope === 'queue') {
+        setRows(await listPendingObservations());
+      } else if (scope === 'approved') {
+        const [approvedRows, promotedMap] = await Promise.all([
+          listApprovedObservationsForCuration(),
+          listPromotedPhotosBySourceId(),
+        ]);
+        setRows(approvedRows);
+        setPromoted(promotedMap);
+      } else {
+        setRows(await listMyObservations());
+      }
     } catch (err) {
       setError(describeError(err));
       setRows([]);
@@ -61,6 +88,38 @@ export function ObservationReview({ user, scope }: Props) {
     }
   }
 
+  async function promote(row: ObservationWithRelations, photo: ObservationPhoto) {
+    setBusyPhotoId(photo.id);
+    setError(null);
+    try {
+      await promotePhotoToGallery({
+        observation: { id: row.id, gbif_key: row.gbif_key, scientific_name: row.scientific_name },
+        photo,
+        contributorName: row.profiles?.display_name ?? null,
+      });
+      await load();
+      onGalleryChanged?.();
+    } catch (err) {
+      setError(describeError(err));
+    } finally {
+      setBusyPhotoId(null);
+    }
+  }
+
+  async function unpromote(speciesPhotoId: string, photoId: string) {
+    setBusyPhotoId(photoId);
+    setError(null);
+    try {
+      await removeSpeciesPhoto(speciesPhotoId);
+      await load();
+      onGalleryChanged?.();
+    } catch (err) {
+      setError(describeError(err));
+    } finally {
+      setBusyPhotoId(null);
+    }
+  }
+
   if (rows === null) return <p className="empty-note">{t('app.loading')}</p>;
 
   return (
@@ -73,7 +132,11 @@ export function ObservationReview({ user, scope }: Props) {
 
       {rows.length === 0 ? (
         <p className="empty-note" data-testid="review-empty">
-          {scope === 'queue' ? t('review.emptyQueue') : t('review.emptyMine')}
+          {scope === 'queue'
+            ? t('review.emptyQueue')
+            : scope === 'approved'
+              ? t('review.emptyApproved')
+              : t('review.emptyMine')}
         </p>
       ) : (
         <ul className="review-list" data-testid="review-list">
@@ -98,21 +161,53 @@ export function ObservationReview({ user, scope }: Props) {
 
                 {photos.length > 0 && (
                   <div className="photo-strip">
-                    {photos.map((photo) => (
-                      <a
-                        key={photo.id}
-                        className="photo-strip__item"
-                        href={publicPhotoUrl(SUPABASE_URL, photo.storage_path)}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        <img
-                          src={publicPhotoUrl(SUPABASE_URL, photo.storage_path)}
-                          alt=""
-                          loading="lazy"
-                        />
-                      </a>
-                    ))}
+                    {photos.map((photo) => {
+                      const speciesPhotoId = promoted.get(photo.id);
+                      const photoBusy = busyPhotoId === photo.id;
+                      return (
+                        <div className="photo-strip__item" key={photo.id}>
+                          <a
+                            href={publicPhotoUrl(SUPABASE_URL, photo.storage_path)}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            <img
+                              src={publicPhotoUrl(SUPABASE_URL, photo.storage_path)}
+                              alt=""
+                              loading="lazy"
+                            />
+                          </a>
+                          {/* Yalnızca onaylı kayıtları gözden geçiren küratör görür — tür
+                              galerisi kalıcı referans veridir, bu yüzden bilinçli bir
+                              küratör kararı gerektirir (bkz. 0004_species_photos.sql). */}
+                          {scope === 'approved' && canReview(user) && (
+                            speciesPhotoId ? (
+                              <button
+                                type="button"
+                                className="photo-strip__gallery-badge photo-strip__gallery-badge--on"
+                                disabled={photoBusy}
+                                onClick={() => void unpromote(speciesPhotoId, photo.id)}
+                                title={t('review.removeFromGallery')}
+                                data-testid={`review-unpromote-${photo.id}`}
+                              >
+                                {t('review.inGallery')}
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                className="photo-strip__gallery-badge"
+                                disabled={photoBusy}
+                                onClick={() => void promote(row, photo)}
+                                title={t('review.promoteToGallery')}
+                                data-testid={`review-promote-${photo.id}`}
+                              >
+                                {t('review.promoteToGallery')}
+                              </button>
+                            )
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
 
@@ -145,7 +240,7 @@ export function ObservationReview({ user, scope }: Props) {
                     <Fact label={t('observation.habitat')} value={row.habitat_note} />
                   )}
                   {row.notes && <Fact label={t('observation.notes')} value={row.notes} />}
-                  {scope === 'queue' && row.profiles && (
+                  {scope !== 'mine' && row.profiles && (
                     <Fact
                       label={t('review.contributor')}
                       value={[row.profiles.display_name, row.profiles.institution]

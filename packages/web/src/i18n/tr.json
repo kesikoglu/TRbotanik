@@ -198,7 +198,8 @@
     "open": "Büyüt",
     "prev": "Önceki görsel",
     "next": "Sonraki görsel",
-    "countOf": "{{current}}/{{total}}"
+    "countOf": "{{current}}/{{total}}",
+    "communityContribution": "Topluluk katkısı"
   },
   "provinceTable": {
     "title": "{{province}} bitkileri",
@@ -285,6 +286,8 @@
     "you": "siz",
     "tabObservations": "Gözlemler",
     "tabUsers": "Kullanıcılar",
+    "tabApproved": "Onaylı kayıtlar",
+    "approvedSubtitle": "Onaylı gözlem fotoğraflarını tür galerisine yükseltin.",
     "reviewSubtitle": "Onay bekleyen arazi gözlemleri.",
     "reviewTitle": "Gözlem denetimi"
   },
@@ -357,6 +360,10 @@
     "myObservationsSubtitle": "Gönderdiğiniz kayıtlar ve durumları.",
     "emptyQueue": "Onay bekleyen gözlem yok.",
     "emptyMine": "Henüz gözlem göndermediniz.",
+    "emptyApproved": "Onaylı gözlem yok.",
+    "promoteToGallery": "Tür galerisine ekle",
+    "inGallery": "✓ Galeride",
+    "removeFromGallery": "Galeriden kaldır",
     "approve": "Onayla",
     "reject": "Reddet",
     "delete": "Sil",

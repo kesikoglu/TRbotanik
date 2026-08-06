@@ -249,7 +249,85 @@ begin
   select count(*) into n from public.observations where created_by = chain_id;
   assert n = 0, 'Kullanıcı silindiğinde gözlemleri silinmedi — silme zinciri kopuk!';
 
+  -- =========================================================================
+  -- 13) species_photos: yalnızca KÜRATÖR ekleyebilir, onaylı katkıda bulunan EKLEYEMEZ
+  -- =========================================================================
+  set local role authenticated;
+  perform set_config('app.current_user_id', ok_id::text, true);
+  failed := false;
+  begin
+    insert into public.species_photos (scientific_name, storage_path, promoted_by)
+    values ('Astragalus microcephalus', 'x/hile.jpg', ok_id);
+  exception when insufficient_privilege then failed := true;
+  end;
+  assert failed, 'Onaylı (küratör olmayan) kullanıcı tür galerisine fotoğraf ekleyebildi — RLS açığı!';
+  reset role;
+
+  set local role authenticated;
+  perform set_config('app.current_user_id', curator_id::text, true);
+  insert into public.species_photos (scientific_name, storage_path, promoted_by)
+  values ('Astragalus microcephalus', 'astragalus-microcephalus/1.jpg', curator_id);
+  reset role;
+  select count(*) into n from public.species_photos;
+  assert n = 1, 'Küratör tür galerisine fotoğraf ekleyemedi';
+
+  -- =========================================================================
+  -- 14) species_photos: GİRİŞ YAPMAMIŞ ziyaretçi de okuyabilir (herkese açık referans veri)
+  -- =========================================================================
+  set local role anon;
+  perform set_config('app.current_user_id', '', true);
+  select count(*) into n from public.species_photos;
+  reset role;
+  assert n = 1, format('Ziyaretçi tür galerisi fotoğrafını görmeliydi, %s gördü', n);
+
+  -- =========================================================================
+  -- 15) species_photos: aynı özgün fotoğraf iki kez yükseltilemez
+  -- =========================================================================
+  -- FK'nın karşılığı olan gerçek bir observation_photos satırı gerekir; RLS'i
+  -- test etmek bu bloğun amacı değil, bu yüzden süper kullanıcı olarak eklenir.
+  declare
+    photo_id uuid;
+  begin
+    insert into public.observation_photos (observation_id, storage_path)
+    values (obs_id, ok_id::text || '/' || obs_id::text || '/tekrar-kaynagi.jpg')
+    returning id into photo_id;
+
+    set local role authenticated;
+    perform set_config('app.current_user_id', curator_id::text, true);
+    failed := false;
+    begin
+      insert into public.species_photos (scientific_name, storage_path, source_photo_id, promoted_by)
+      values ('Tekrar', 'x/tekrar-a.jpg', photo_id, curator_id);
+      insert into public.species_photos (scientific_name, storage_path, source_photo_id, promoted_by)
+      values ('Tekrar', 'x/tekrar-b.jpg', photo_id, curator_id);
+    exception when unique_violation then failed := true;
+    end;
+    reset role;
+    assert failed, 'Aynı özgün fotoğraf iki kez tür galerisine yükseltilebildi!';
+  end;
+
+  -- =========================================================================
+  -- 16) species-photos deposu: yalnızca küratör yazabilir
+  -- =========================================================================
+  set local role authenticated;
+  perform set_config('app.current_user_id', ok_id::text, true);
+  failed := false;
+  begin
+    insert into storage.objects (bucket_id, name) values ('species-photos', 'hile/foto.jpg');
+  exception when insufficient_privilege then failed := true;
+  end;
+  assert failed, 'Küratör olmayan kullanıcı tür galerisi deposuna yazabildi — depolama açığı!';
+  reset role;
+
+  set local role authenticated;
+  perform set_config('app.current_user_id', curator_id::text, true);
+  insert into storage.objects (bucket_id, name) values ('species-photos', 'kurator/foto.jpg');
+  reset role;
+  select count(*) into n from storage.objects
+  where bucket_id = 'species-photos' and name = 'kurator/foto.jpg';
+  assert n = 1, 'Küratör tür galerisi deposuna yazamadı';
+
   -- `warning` seviyesi kasıtlı: yukarıdaki `client_min_messages = warning`
   -- ayarı notice'ları gizler, bu satırın çıktıda GÖRÜNMESİ gerekir.
-  raise warning 'TÜM RLS TESTLERİ GEÇTİ (12/12)';
+  raise warning 'TÜM RLS TESTLERİ GEÇTİ (16/16)';
 end $$;

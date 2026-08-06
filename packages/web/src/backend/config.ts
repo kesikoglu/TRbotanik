@@ -36,3 +36,11 @@ export const isBackendConfigured = (): boolean =>
 
 /** Yüklenen fotoğrafların saklandığı kova (bkz. supabase/migrations/0002_storage.sql). */
 export const PHOTO_BUCKET = 'observation-photos';
+
+/**
+ * Küratör onayıyla tür referans galerisine yükseltilen fotoğrafların kovası
+ * (bkz. supabase/migrations/0004_species_photos.sql). Ayrı bir kova olmasının
+ * nedeni: buradaki dosyalar özgün gözlemden BAĞIMSIZ, kalıcı referans veridir —
+ * `observation-photos`'taki gibi katkıda bulunanın kendi klasöründen silinemez.
+ */
+export const SPECIES_PHOTO_BUCKET = 'species-photos';

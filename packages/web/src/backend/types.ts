@@ -83,6 +83,28 @@ export interface ObservationWithRelations extends Observation {
 }
 
 /**
+ * Küratör onayıyla tür referans galerisine yükseltilmiş topluluk fotoğrafı.
+ * Kaynak: supabase/migrations/0004_species_photos.sql
+ */
+export interface SpeciesPhoto {
+  id: string;
+  gbif_key: number | null;
+  scientific_name: string;
+  source_observation_id: string | null;
+  source_photo_id: string | null;
+  storage_path: string;
+  caption: string | null;
+  width: number | null;
+  height: number | null;
+  bytes: number | null;
+  contributor_name: string | null;
+  license: string;
+  sort_order: number;
+  promoted_by: string;
+  promoted_at: string;
+}
+
+/**
  * Yeni gözlem girdisi — formun ürettiği, sunucuya gidecek alanlar.
  *
  * `davis_square`, `status`, `created_by` KASITLI olarak yok: ilki sunucuda
