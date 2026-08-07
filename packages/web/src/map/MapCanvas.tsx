@@ -8,6 +8,7 @@ import maplibregl, {
 import {
   DAVIS_CODES,
   davisSquareBounds,
+  davisSquareFor,
   type DavisCode,
   type OccurrenceRecord,
   type PlantImage,
@@ -194,6 +195,15 @@ export function MapCanvas({ dataset, selection, occurrences: allOccurrences }: P
   const popupRef = useRef<maplibregl.Popup | null>(null);
 
   const mapMode = useAppStore((s) => s.mapMode);
+  /**
+   * `load` geri çağrısı yalnızca BİR KEZ kurulur — ısı haritası modundaki tıklama
+   * işleyicisi (aşağıda) `mapMode`'u doğrudan yakalarsa mod değiştiğinde güncellenmez.
+   * `tRef` ile aynı desen.
+   */
+  const mapModeRef = useRef(mapMode);
+  useEffect(() => {
+    mapModeRef.current = mapMode;
+  }, [mapMode]);
   const metric = useAppStore((s) => s.metric);
   const selectedSquare = useAppStore((s) => s.selectedSquare);
   const selectedSpeciesId = useAppStore((s) => s.selectedSpeciesId);
@@ -527,6 +537,24 @@ export function MapCanvas({ dataset, selection, occurrences: allOccurrences }: P
         selectSpecies(null);
       });
 
+      /**
+       * Isı haritası modunda tıklanabilir ayrı bir katman yok — L_HEATMAP sürekli
+       * bir yoğunluk gölgesi çiziyor, altındaki noktalar/kare dolgusu gizli
+       * (bkz. mod değişimi effect'i). Bu yüzden tıklama hiçbir şeye isabet etmiyor
+       * gibi görünüyordu (bkz. kullanıcı geri bildirimi). Tıklanan koordinatı
+       * doğrudan Davis karesine çevirip aynı kare panelini (tür listesi) açarak
+       * bu modda da "burada ne var" sorusuna cevap veriyoruz.
+       */
+      map.on('click', (event) => {
+        if (mapModeRef.current !== 'heatmap') return;
+        const hitHighlight = map.queryRenderedFeatures(event.point, { layers: [L_SPECIES_HL] }).length > 0;
+        if (hitHighlight) return;
+        const code = davisSquareFor(event.lngLat.lat, event.lngLat.lng);
+        if (!code) return;
+        selectSquare(code);
+        selectSpecies(null);
+      });
+
       map.on('click', L_POINTS, (event) => {
         const feature = event.features?.[0];
         if (!feature) return;
@@ -778,6 +806,9 @@ export function MapCanvas({ dataset, selection, occurrences: allOccurrences }: P
       for (const marker of labelMarkersRef.current) {
         marker.getElement().style.display = isDavis ? '' : 'none';
       }
+      // Isı haritasının tamamı tıklanabilir (bkz. yukarıdaki genel click işleyicisi) —
+      // imleç bunu davis modundaki kare dolgusuyla aynı şekilde işaret eder.
+      map.getCanvas().style.cursor = mapMode === 'heatmap' ? 'pointer' : '';
     };
 
     if (readyRef.current) update();
