@@ -268,7 +268,9 @@
     "confirmPassword": "New password (again)",
     "passwordMismatch": "Passwords don't match.",
     "savePassword": "Save password",
-    "cancelSignOut": "Cancel, sign out"
+    "cancelSignOut": "Cancel, sign out",
+    "continueWithGoogle": "Continue with Google",
+    "orDivider": "or"
   },
   "admin": {
     "open": "Review panel",

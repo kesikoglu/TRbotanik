@@ -48,6 +48,25 @@ export async function signIn(email: string, password: string): Promise<void> {
   if (error) throw error;
 }
 
+/**
+ * Google ile giriş/kayıt — aynı akış: hesap yoksa Google onayından sonra
+ * Supabase kendisi oluşturur (bkz. handle_new_user tetikleyicisi, Google'ın
+ * verdiği adı `full_name`/`name` alanlarından okur — 0005_oauth_display_name.sql).
+ * Yeni hesap da e-posta kaydı gibi `pending` başlar, yönetici onayı gerekir.
+ *
+ * Tarayıcı Google'a yönlendirilir; bu fonksiyon geri dönmez (sayfa navigasyonu).
+ */
+export async function signInWithGoogle(): Promise<void> {
+  const supabase = await getSupabase();
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: window.location.origin + window.location.pathname,
+    },
+  });
+  if (error) throw error;
+}
+
 export async function signOut(): Promise<void> {
   const supabase = await getSupabase();
   const { error } = await supabase.auth.signOut();

@@ -327,7 +327,38 @@ begin
   where bucket_id = 'species-photos' and name = 'kurator/foto.jpg';
   assert n = 1, 'Küratör tür galerisi deposuna yazamadı';
 
+  -- =========================================================================
+  -- 17) handle_new_user: Google OAuth ile gelen ad (full_name/name) okunur
+  -- =========================================================================
+  -- Google girişinde `raw_user_meta_data.display_name` HİÇ gelmez (yalnızca
+  -- kendi kayıt formumuzun gönderdiği özel bir alan) — tetikleyici
+  -- full_name/name'e düşmezse her Google kullanıcısının adı e-posta ön ekine
+  -- düşerdi, oysa Google zaten gerçek adı veriyor.
+  declare
+    google_id uuid := 'aaaaaaaa-1111-1111-1111-111111111111';
+    name_only_id uuid := 'aaaaaaaa-2222-2222-2222-222222222222';
+    no_meta_id uuid := 'aaaaaaaa-3333-3333-3333-333333333333';
+    got_name text;
+  begin
+    insert into auth.users (id, email, raw_user_meta_data) values
+      (google_id, 'google-test@gmail.com', '{"full_name": "Google Test Kullanıcı"}'::jsonb),
+      (name_only_id, 'google-test2@gmail.com', '{"name": "Sadece Name Alanı"}'::jsonb),
+      (no_meta_id, 'meta-yok@gmail.com', '{}'::jsonb);
+
+    select display_name into got_name from public.profiles where id = google_id;
+    assert got_name = 'Google Test Kullanıcı',
+      format('Google full_name okunmadı, gelen: %s', got_name);
+
+    select display_name into got_name from public.profiles where id = name_only_id;
+    assert got_name = 'Sadece Name Alanı',
+      format('Google name alanı okunmadı, gelen: %s', got_name);
+
+    select display_name into got_name from public.profiles where id = no_meta_id;
+    assert got_name = 'meta-yok',
+      format('Üstveri yokken e-posta ön ekine düşmedi, gelen: %s', got_name);
+  end;
+
   -- `warning` seviyesi kasıtlı: yukarıdaki `client_min_messages = warning`
   -- ayarı notice'ları gizler, bu satırın çıktıda GÖRÜNMESİ gerekir.
-  raise warning 'TÜM RLS TESTLERİ GEÇTİ (16/16)';
+  raise warning 'TÜM RLS TESTLERİ GEÇTİ (17/17)';
 end $$;

@@ -268,7 +268,9 @@
     "confirmPassword": "Yeni şifre (tekrar)",
     "passwordMismatch": "Şifreler eşleşmiyor.",
     "savePassword": "Şifreyi kaydet",
-    "cancelSignOut": "Vazgeç, çıkış yap"
+    "cancelSignOut": "Vazgeç, çıkış yap",
+    "continueWithGoogle": "Google ile devam et",
+    "orDivider": "veya"
   },
   "admin": {
     "open": "Denetim paneli",

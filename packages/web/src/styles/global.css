@@ -1210,6 +1210,37 @@ button {
   color: var(--c-danger, #f87171);
 }
 
+.button--google {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  background: #fff;
+  border-color: #fff;
+  color: #3c4043;
+}
+
+.button--google:hover:not(:disabled) {
+  background: #f5f5f5;
+  border-color: #f5f5f5;
+}
+
+.form__divider {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  color: var(--c-text-muted);
+  font-size: 12px;
+}
+
+.form__divider::before,
+.form__divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--c-border);
+}
+
 .form__row {
   display: flex;
   gap: var(--sp-2);
