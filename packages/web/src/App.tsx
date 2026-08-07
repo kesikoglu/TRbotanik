@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TaxonNode } from '@trbotanik/shared';
 import { useDataset } from './data/useDataset';
@@ -18,6 +18,7 @@ import { AccountPanel } from './features/AccountPanel';
 import { AdminPanel } from './features/AdminPanel';
 import { ObservationForm } from './features/ObservationForm';
 import { ObservationReview } from './features/ObservationReview';
+import { hasSeenTour, OnboardingTour } from './features/OnboardingTour';
 import { canContribute, type SessionUser } from './backend/auth';
 import { isBackendConfigured } from './backend/config';
 import { useSession, type SessionState } from './backend/useSession';
@@ -61,6 +62,16 @@ function Workspace({ dataset }: { dataset: Dataset }) {
   const selectedSpeciesId = useAppStore((s) => s.selectedSpeciesId);
   const selectedSquare = useAppStore((s) => s.selectedSquare);
   const provinceTableOpen = useAppStore((s) => s.provinceTableOpen);
+  const openTour = useAppStore((s) => s.openTour);
+
+  // İlk ziyarette (hesap açmış olsun olmasın) kısa bir tanıtım turu açılır —
+  // localStorage bayrağıyla bir daha gösterilmez. Üst çubuktaki "?" düğmesiyle
+  // istenildiği zaman tekrar açılabilir (bkz. OnboardingTour.tsx).
+  useEffect(() => {
+    if (hasSeenTour()) return;
+    const timer = window.setTimeout(() => openTour(), 700);
+    return () => window.clearTimeout(timer);
+  }, [openTour]);
 
   const endemicIds = useMemo(() => buildEndemicSet(dataset.details), [dataset.details]);
 
@@ -119,6 +130,17 @@ function Workspace({ dataset }: { dataset: Dataset }) {
           <Stat value={selection.totals.records} label={t('stats.records')} />
           <Stat value={`${selection.totals.squares}/29`} label={t('stats.squares')} />
         </div>
+
+        <button
+          type="button"
+          className="icon-button"
+          onClick={openTour}
+          aria-label={t('app.tourHelp')}
+          title={t('app.tourHelp')}
+          data-testid="tour-help-button"
+        >
+          ?
+        </button>
 
         <div className="filter-row" role="group" aria-label={t('lang.switch')}>
           {SUPPORTED_LANGUAGES.map((lang) => (
@@ -198,6 +220,8 @@ function Workspace({ dataset }: { dataset: Dataset }) {
           selection={selection}
         />
       )}
+
+      <OnboardingTour />
     </div>
   );
 }

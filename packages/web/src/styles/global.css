@@ -1679,3 +1679,78 @@ button {
 .sidebar__note--error {
   color: var(--c-danger);
 }
+
+/* ── Tanıtım turu (OnboardingTour.tsx) ────────────────────────────── */
+
+.tour-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  pointer-events: none;
+}
+
+/* Hedefsiz adımlarda (karşılama) tüm ekranı karartır — modal gibi tıklamayı
+   engeller. Hedefli adımlarda bunun yerine .tour-spotlight kullanılır, o
+   tıklamayı ENGELLEMEZ: kullanıcı ipucunu okurken vurgulanan öğeyle de
+   etkileşebilir. */
+.tour-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(6, 10, 8, 0.72);
+  pointer-events: auto;
+}
+
+.tour-spotlight {
+  position: fixed;
+  border-radius: var(--r-md);
+  /* Dev bir box-shadow, hedefin DIŞINI karartır — hedefin kendisi aydınlık kalır. */
+  box-shadow: 0 0 0 9999px rgba(6, 10, 8, 0.72);
+  outline: 2px solid var(--c-accent);
+  transition: top 0.15s ease, left 0.15s ease, width 0.15s ease, height 0.15s ease;
+}
+
+.tour-card {
+  pointer-events: auto;
+  width: 320px;
+  max-width: calc(100vw - 24px);
+  padding: var(--sp-4);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border-strong);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-panel);
+}
+
+.tour-card__step {
+  margin: 0 0 var(--sp-1);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--c-text-faint);
+}
+
+.tour-card__title {
+  margin: 0 0 var(--sp-2);
+  font-family: var(--font-serif);
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.tour-card__body {
+  margin: 0 0 var(--sp-3);
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--c-text-muted);
+}
+
+.tour-card__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+}
+
+.tour-card__nav {
+  display: flex;
+  gap: var(--sp-2);
+}

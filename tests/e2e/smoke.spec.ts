@@ -9,6 +9,12 @@ async function waitForMap(page: Page) {
 }
 
 test.beforeEach(async ({ page }) => {
+  // Tanıtım turu (bkz. onboarding-tour.spec.ts) ilk ziyarette otomatik açılır
+  // ve karşılama adımı tüm ekranı kaplayan bir arka planla tıklamayı engeller —
+  // buradaki testler onu sınamıyor, "daha önce görülmüş" işaretleyip atlıyoruz.
+  await page.addInitScript(() => {
+    localStorage.setItem('trbotanik.tour.seen', '1');
+  });
   await page.goto('/');
   await waitForMap(page);
 });

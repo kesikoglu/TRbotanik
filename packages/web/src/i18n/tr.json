@@ -4,7 +4,8 @@
     "subtitle": "Türkiye Botanik Çeşitliliği Haritası",
     "loading": "Veri yükleniyor…",
     "loadError": "Veri yüklenemedi",
-    "retry": "Yeniden dene"
+    "retry": "Yeniden dene",
+    "tourHelp": "Sitede gezinme turu"
   },
   "stats": {
     "taxa": "takson",
@@ -380,5 +381,24 @@
       "rejected": "Reddedildi",
       "suspended": "Askıda"
     }
+  },
+  "tour": {
+    "stepOf": "{{current}} / {{total}}",
+    "skip": "Atla",
+    "back": "Geri",
+    "next": "İleri",
+    "finish": "Anladım",
+    "welcomeTitle": "TRbotanik'e hoş geldiniz",
+    "welcomeBody": "Türkiye'nin bitki çeşitliliğini haritada keşfedin. Size arayüzü kısaca tanıtalım — istediğiniz an \"Atla\"ya basıp geçebilirsiniz.",
+    "modesTitle": "Üç harita görünümü",
+    "modesBody": "Davis kareleri (akademik standart bölgeleme), tek tek kayıt noktaları veya yoğunluk ısı haritası arasında geçiş yapabilirsiniz.",
+    "searchTitle": "Tür arayın veya filtreleyin",
+    "searchBody": "Latince ya da Türkçe adla arayın; ya da soldaki ağaçtan sınıf, familya veya cins seçerek haritayı daraltın.",
+    "treeTitle": "Bir türe tıklayın",
+    "treeBody": "Ağaçtaki herhangi bir türe tıkladığınızda sağda ayrıntılı bilgiler, görseller ve haritada o türün konumu açılır.",
+    "contributeTitle": "Kendi gözleminizi ekleyin",
+    "contributeBodyAnon": "Arazide gördüğünüz bir bitkiyi kaydetmek isterseniz, buradan ücretsiz hesap açabilirsiniz.",
+    "contributeBodyPending": "Hesabınız oluşturuldu — bir yönetici onayladıktan sonra buradan gözlem ekleyebileceksiniz.",
+    "contributeBodyApproved": "Arazide gördüğünüz bir bitkiyi konum ve fotoğrafıyla buradan kaydedebilirsiniz."
   }
 }

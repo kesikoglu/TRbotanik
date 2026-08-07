@@ -4,7 +4,8 @@
     "subtitle": "Botanical Diversity Map of Türkiye",
     "loading": "Loading data…",
     "loadError": "Could not load data",
-    "retry": "Retry"
+    "retry": "Retry",
+    "tourHelp": "Site tour"
   },
   "stats": {
     "taxa": "taxa",
@@ -380,5 +381,24 @@
       "rejected": "Rejected",
       "suspended": "Suspended"
     }
+  },
+  "tour": {
+    "stepOf": "{{current}} / {{total}}",
+    "skip": "Skip",
+    "back": "Back",
+    "next": "Next",
+    "finish": "Got it",
+    "welcomeTitle": "Welcome to TRbotanik",
+    "welcomeBody": "Explore Türkiye's plant diversity on the map. Here's a quick tour of the interface — feel free to hit \"Skip\" at any time.",
+    "modesTitle": "Three map views",
+    "modesBody": "Switch between Davis squares (the academic standard grid), individual occurrence points, or a density heatmap.",
+    "searchTitle": "Search or filter species",
+    "searchBody": "Search by Latin or Turkish name, or narrow the map by picking a class, family, or genus from the tree on the left.",
+    "treeTitle": "Click any species",
+    "treeBody": "Clicking a species in the tree opens detailed information, images, and its location on the map on the right.",
+    "contributeTitle": "Add your own observation",
+    "contributeBodyAnon": "If you'd like to record a plant you've seen in the field, you can create a free account here.",
+    "contributeBodyPending": "Your account was created — once an admin approves it, you'll be able to add observations here.",
+    "contributeBodyApproved": "Record a plant you've seen in the field, with its location and a photo, right here."
   }
 }

@@ -29,6 +29,8 @@ interface AppState {
   basemapTileError: boolean;
   /** İl seçilince açılan takson tablosu görünür mü */
   provinceTableOpen: boolean;
+  /** Tanıtım turu açık mı — bkz. OnboardingTour.tsx */
+  tourOpen: boolean;
 
   setQuery: (query: string) => void;
   toggleTaxon: (id: number) => void;
@@ -48,6 +50,8 @@ interface AppState {
   collapseAll: () => void;
   setBasemap: (id: string) => void;
   setBasemapTileError: (hasError: boolean) => void;
+  openTour: () => void;
+  closeTour: () => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -60,6 +64,7 @@ export const useAppStore = create<AppState>((set) => ({
   basemapId: initialBasemapId(),
   basemapTileError: false,
   provinceTableOpen: false,
+  tourOpen: false,
 
   setQuery: (query) => set((state) => ({ filter: { ...state.filter, query } })),
 
@@ -127,4 +132,7 @@ export const useAppStore = create<AppState>((set) => ({
   },
 
   setBasemapTileError: (basemapTileError) => set({ basemapTileError }),
+
+  openTour: () => set({ tourOpen: true }),
+  closeTour: () => set({ tourOpen: false }),
 }));

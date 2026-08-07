@@ -13,7 +13,7 @@ export function MapControls() {
   const setMapMode = useAppStore((s) => s.setMapMode);
 
   return (
-    <div className="mode-switch" role="group" aria-label={t('legend.title')}>
+    <div className="mode-switch" role="group" aria-label={t('legend.title')} data-testid="mode-switch">
       {MODES.map(({ mode, labelKey }) => (
         <button
           key={mode}
