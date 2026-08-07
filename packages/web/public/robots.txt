@@ -1,0 +1,46 @@
+# TRbotanik — Türkiye Botanik Çeşitliliği Haritası
+# Herkese açık, telif hakkı gerektirmeyen (GBIF tabanlı) bilimsel veri sunar.
+# Tüm tarayıcılara ve üretken yapay zekâ (GEO) botlarına kasıtlı olarak açıktır —
+# amaç, doğru atıflı biçimde AI arama/sohbet sonuçlarında da referans gösterilmek.
+
+User-agent: *
+Allow: /
+
+# Bilinen AI/üretken-arama botları — kasıtlı olarak ENGELLENMİYOR.
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Perplexity-User
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: GoogleOther
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+Sitemap: https://plum-dove-921331.hostingersite.com/sitemap.xml

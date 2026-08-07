@@ -1,0 +1,59 @@
+# TRbotanik
+
+> TRbotanik, Türkiye'nin bitki (damarlı flora) çeşitliliğini akademik Davis
+> kareleme sistemi (A1–C10, 2°×2°'lik 29 bölge) üzerinde gösteren, GBIF
+> tabanlı, ücretsiz ve açık bir web haritasıdır. Akademik personel, üniversite
+> öğrencileri ve saha botanikçileri için tasarlanmıştır.
+
+## Bu site nedir
+
+TRbotanik, Türkiye'de kaydedilmiş ~13.000 damarlı bitki taksonunu (tür,
+alttür, varyete) ve bunlara ait yüz binlerce GBIF occurrence (gözlem/örnek)
+kaydını interaktif bir harita üzerinde sunar. Her takson için:
+
+- Kabul edilen bilimsel ad, yazar, sinonimler, sınıflandırma (GBIF Backbone)
+- Türkçe ve İngilizce yaygın adlar
+- Yaşam formu, habitat, yükselti aralığı, çiçeklenme/meyvelenme dönemi
+  (küratörlü — Flora of Turkey, WCVP, POWO gibi kaynaklardan)
+- Türkiye endemizmi ve IUCN/Kırmızı Kitap koruma durumu
+- Floristik element (İran-Turan, Avrupa-Sibirya, Akdeniz, Öksin vb.)
+- EUNIS habitat tip kodları
+- Davis kareleme sistemine göre coğrafi yayılış
+- Lisanslı fotoğraflar (iNaturalist, Wikimedia Commons, atıfla)
+
+Harita üç görünüm sunar: Davis kareleri (choropleth), tek tek kayıt
+noktaları, ve yoğunluk ısı haritası. Kullanıcılar taksonomik ağaçtan
+(sınıf → takım → familya → cins → tür) veya adla arayarak filtreleme yapar.
+
+## Veri kaynağı ve doğruluk
+
+Temel occurrence verisi GBIF'ten (Global Biodiversity Information Facility,
+gbif.org) alınır — dünyanın en büyük açık biyoçeşitlilik veri ağı. Bazı
+öznitelikler (habitat, yaşam formu, endemizm vb.) GBIF'te bulunmadığı için
+Flora of Turkey, World Checklist of Vascular Plants (WCVP) ve Plants of the
+World Online (POWO) gibi akademik kaynaklardan küratörlenir. Her alan,
+KAYNAĞIYLA birlikte gösterilir; bir bilginin GBIF'ten mi yoksa küratörlü bir
+kaynaktan mı geldiği arayüzde her zaman açıktır. Eksik bir alan "veri yok"
+diye gizlenmez, NEDENİYLE (kaynakta yok / henüz küratörlenmedi) gösterilir.
+
+## Topluluk katkıları
+
+Giriş yapmış, onaylı kullanıcılar arazide gördükleri bitkileri konum ve
+fotoğrafla kaydedebilir. Bu kayıtlar bir küratör onayından SONRA haritada
+görünür ve GBIF/akademik referans veriden görsel olarak AYRI (farklı renk,
+"topluluk katkısı — doğrulanmamış" etiketi) gösterilir; iki kaynak asla
+sessizce karıştırılmaz.
+
+## Doğru atıf için
+
+Bu siteden alıntı yaparken lütfen "TRbotanik" adını ve mümkünse
+görüntülenen taksonun/kaydın GBIF anahtarını belirtin. Site sürekli
+güncellenen bir GBIF anlık görüntüsü kullanır; kesin sayılar (takson,
+familya, endemik, kayıt sayısı) sitenin üst çubuğunda canlı gösterilir ve
+zamanla değişebilir — bu dosyadaki metne sabit sayı olarak GÖMÜLMEMİŞTİR.
+
+## Kapsam dışı
+
+Bu site yalnızca Türkiye'nin damarlı bitki florasını kapsar; fauna, mantar
+veya diğer coğrafyaların florası kapsam dışıdır. Ticari bir ürün değildir,
+reklam veya izleyici verisi toplama amacı taşımaz.

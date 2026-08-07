@@ -162,6 +162,11 @@ button {
   display: flex;
   flex-direction: column;
   min-height: 0;
+  /* Izgara hücresinin GERÇEK sınırı bu — kısıtlı yükseklikte (dar ekranlar)
+     sığmayan içerik burada kesilir, aksi hâlde görsel olarak harita
+     bölmesine taşar ve altındaki harita kontrolleri tıklamaları kapardı
+     (bkz. mobil düzen testinde bulunan gerçek bir hata). */
+  overflow: hidden;
   background: var(--c-surface);
   border-right: 1px solid var(--c-border);
 }
@@ -1570,6 +1575,20 @@ button {
 /* ── Dar ekran ────────────────────────────────────────────────────── */
 
 @media (max-width: 1100px) {
+  /* Alt başlık ("Türkiye Botanik Çeşitliliği Haritası") 640px altında zaten
+     gizleniyordu, ama 640-1100 aralığında (tablet) başlığın yanında dar bir
+     sütuna sıkışıp üç satıra bölünüyor, üst çubuğu gereksiz yere
+     yükseltiyordu — telefonla aynı kapsamda gizlenir. Üst çubuk da tek
+     satıra sığmazsa (uç boyutlarda) taşmak yerine sarmalar. */
+  .topbar {
+    flex-wrap: wrap;
+    row-gap: var(--sp-2);
+  }
+
+  .topbar__subtitle {
+    display: none;
+  }
+
   .app__body,
   .app__body--detail-open {
     grid-template-columns: 1fr;
@@ -1579,6 +1598,16 @@ button {
   .sidebar {
     border-right: 0;
     border-bottom: 1px solid var(--c-border);
+    /* Kısıtlı yükseklikte arama/filtre + ağaç ayrı ayrı değil, TEK bir
+       kaydırılabilir alan olarak davranır — aksi hâlde arama kutusu ve
+       filtreler zaten ayrılan yüksekliğin çoğunu tüketip ağaca neredeyse
+       hiç yer bırakmıyordu. */
+    overflow-y: auto;
+  }
+
+  .sidebar__section--grow {
+    flex: none;
+    overflow-y: visible;
   }
 
   .detail {
@@ -1624,10 +1653,15 @@ button {
     display: none;
   }
 
-  /* Taksonomi kenar çubuğu saha girişinde gereksiz yer kaplıyor. */
+  /* Taksonomi kenar çubuğu saha girişinde gereksiz yer kaplamasın diye
+     dar tutulur (harita önceliklidir) — ama arama kutusu + il filtresi +
+     filtre rozetleri tek başına ~150px tuttuğu için 180px ağaca neredeyse
+     hiç yer bırakmıyordu; kenar çubuğu artık tek parça kaydırılabilir
+     olduğu için (yukarı bakın) 230px hem aramayı hem birkaç ağaç satırını
+     taşmadan gösterir. */
   .app__body,
   .app__body--detail-open {
-    grid-template-rows: 180px 1fr;
+    grid-template-rows: 230px 1fr;
   }
 
   /* Kipler telefonda TAM EKRAN açılır. Ortalanmış ve yüksekliği sınırlı bir

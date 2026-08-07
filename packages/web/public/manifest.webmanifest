@@ -1,0 +1,17 @@
+{
+  "name": "TRbotanik — Türkiye Botanik Çeşitliliği Haritası",
+  "short_name": "TRbotanik",
+  "description": "Türkiye'nin bitki çeşitliliğini Davis kareleme sistemi üzerinde keşfeden interaktif harita.",
+  "start_url": "/",
+  "display": "browser",
+  "background_color": "#0f1613",
+  "theme_color": "#0f1613",
+  "lang": "tr",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
