@@ -5,7 +5,8 @@
     "loading": "Veri yükleniyor…",
     "loadError": "Veri yüklenemedi",
     "retry": "Yeniden dene",
-    "tourHelp": "Sitede gezinme turu"
+    "tourHelp": "Sitede gezinme turu",
+    "goHome": "Ana sayfaya dön — arama, filtreler ve seçimi temizler"
   },
   "stats": {
     "taxa": "takson",

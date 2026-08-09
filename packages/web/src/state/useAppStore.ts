@@ -31,6 +31,13 @@ interface AppState {
   provinceTableOpen: boolean;
   /** Tanıtım turu açık mı — bkz. OnboardingTour.tsx */
   tourOpen: boolean;
+  /**
+   * Üst çubuktaki "TRbotanik" başlığına tıklanınca artar — MapCanvas bu sayacı
+   * dinleyip haritayı Türkiye görünümüne sıfırlıyor (bkz. goHome). Doğrudan bir
+   * boolean değil sayaç: aynı anda zaten sıfırlanmış durumdayken tekrar tıklansa
+   * bile değer değiştiği için effect yine tetiklenir.
+   */
+  homeRequestId: number;
 
   setQuery: (query: string) => void;
   toggleTaxon: (id: number) => void;
@@ -52,6 +59,7 @@ interface AppState {
   setBasemapTileError: (hasError: boolean) => void;
   openTour: () => void;
   closeTour: () => void;
+  goHome: () => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -65,6 +73,7 @@ export const useAppStore = create<AppState>((set) => ({
   basemapTileError: false,
   provinceTableOpen: false,
   tourOpen: false,
+  homeRequestId: 0,
 
   setQuery: (query) => set((state) => ({ filter: { ...state.filter, query } })),
 
@@ -135,4 +144,18 @@ export const useAppStore = create<AppState>((set) => ({
 
   openTour: () => set({ tourOpen: true }),
   closeTour: () => set({ tourOpen: false }),
+
+  // Üst çubuktaki başlığa tıklanınca: arama/filtreler, seçili tür/kare, açık
+  // detay paneli ve ağaç genişletmeleri ilk açılış durumuna döner. Altlık ve
+  // harita modu bilerek DOKUNULMAZ — bunlar içerik seçimi değil, kullanıcının
+  // görüntüleme tercihidir.
+  goHome: () =>
+    set((state) => ({
+      filter: EMPTY_FILTER,
+      selectedSquare: null,
+      selectedSpeciesId: null,
+      provinceTableOpen: false,
+      expandedNodes: new Set<number>(),
+      homeRequestId: state.homeRequestId + 1,
+    })),
 }));

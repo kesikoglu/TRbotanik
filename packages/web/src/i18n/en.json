@@ -5,7 +5,8 @@
     "loading": "Loading data…",
     "loadError": "Could not load data",
     "retry": "Retry",
-    "tourHelp": "Site tour"
+    "tourHelp": "Site tour",
+    "goHome": "Go to home page — clears search, filters, and selection"
   },
   "stats": {
     "taxa": "taxa",

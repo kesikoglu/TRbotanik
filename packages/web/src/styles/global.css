@@ -102,6 +102,22 @@ button {
   letter-spacing: -0.01em;
 }
 
+.topbar__title-button {
+  all: unset;
+  cursor: pointer;
+}
+
+.topbar__title-button:hover,
+.topbar__title-button:focus-visible {
+  color: var(--c-accent);
+}
+
+.topbar__title-button:focus-visible {
+  outline: 2px solid var(--c-accent);
+  outline-offset: 3px;
+  border-radius: var(--r-sm);
+}
+
 .topbar__subtitle {
   color: var(--c-text-muted);
   font-size: 12px;

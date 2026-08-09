@@ -63,6 +63,7 @@ function Workspace({ dataset }: { dataset: Dataset }) {
   const selectedSquare = useAppStore((s) => s.selectedSquare);
   const provinceTableOpen = useAppStore((s) => s.provinceTableOpen);
   const openTour = useAppStore((s) => s.openTour);
+  const goHome = useAppStore((s) => s.goHome);
 
   // İlk ziyarette (hesap açmış olsun olmasın) kısa bir tanıtım turu açılır —
   // localStorage bayrağıyla bir daha gösterilmez. Üst çubuktaki "?" düğmesiyle
@@ -117,7 +118,17 @@ function Workspace({ dataset }: { dataset: Dataset }) {
     <div className="app">
       <header className="topbar">
         <div className="topbar__brand">
-          <h1 className="topbar__title">{t('app.title')}</h1>
+          <h1 className="topbar__title">
+            <button
+              type="button"
+              className="topbar__title-button"
+              onClick={goHome}
+              title={t('app.goHome')}
+              data-testid="home-button"
+            >
+              {t('app.title')}
+            </button>
+          </h1>
           <span className="topbar__subtitle">{t('app.subtitle')}</span>
         </div>
 

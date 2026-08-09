@@ -205,6 +205,7 @@ export function MapCanvas({ dataset, selection, occurrences: allOccurrences }: P
     mapModeRef.current = mapMode;
   }, [mapMode]);
   const metric = useAppStore((s) => s.metric);
+  const homeRequestId = useAppStore((s) => s.homeRequestId);
   const selectedSquare = useAppStore((s) => s.selectedSquare);
   const selectedSpeciesId = useAppStore((s) => s.selectedSpeciesId);
   const communityOnly = useAppStore((s) => s.filter.communityOnly);
@@ -814,6 +815,28 @@ export function MapCanvas({ dataset, selection, occurrences: allOccurrences }: P
     if (readyRef.current) update();
     else map.once('trbotanik.ready', update);
   }, [mapMode]);
+
+  /**
+   * ── "Eve dön" — üst çubuktaki başlığa tıklanınca ────────────────────
+   *
+   * `homeRequestId` başlangıçta 0'dır ve yalnızca `goHome()` çağrılınca artar,
+   * bu yüzden ilk kurulumdaki (zaten kendi fitBounds'unu yapan) render bu effect'i
+   * tetiklemez. `userMovedRef` bilerek false'a çekilir — aksi hâlde kullanıcı daha
+   * önce haritayı elle oynattıysa, panel kapanınca tetiklenen ResizeObserver bu
+   * sıfırlamayı görmezden gelirdi (bkz. yukarıdaki ResizeObserver açıklaması).
+   */
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || homeRequestId === 0) return;
+
+    const update = () => {
+      userMovedRef.current = false;
+      map.fitBounds(TURKIYE_VIEW_BOUNDS, { padding: 24, duration: 600 });
+    };
+
+    if (readyRef.current) update();
+    else map.once('trbotanik.ready', update);
+  }, [homeRequestId]);
 
   /* ── Seçili kare vurgusu ─────────────────────────────────────────── */
   const previousSquareRef = useRef<DavisCode | null>(null);
