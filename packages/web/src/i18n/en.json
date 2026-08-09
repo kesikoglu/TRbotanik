@@ -57,7 +57,8 @@
     "basemapEsri": "Esri World Imagery (satellite)",
     "basemapMaptiler": "MapTiler (satellite)",
     "basemapGroup": "Basemap",
-    "tileLoadError": "Satellite tiles failed to load. Check your internet connection or this page's external content permissions; switch back to Offline if the problem persists."
+    "tileLoadError": "Satellite tiles failed to load. Check your internet connection or this page's external content permissions; switch back to Offline if the problem persists.",
+    "madeBy": "Made by websitenai.com"
   },
   "legend": {
     "title": "Legend",

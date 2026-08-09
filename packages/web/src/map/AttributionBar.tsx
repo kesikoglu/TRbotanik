@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import type { DataManifest } from '@trbotanik/shared';
 import { useAppStore } from '../state/useAppStore';
 import { getBasemap } from './basemaps';
@@ -11,6 +12,7 @@ import { getBasemap } from './basemaps';
  * BasemapSwitcher) atıf metni etkin altlığa göre canlı güncellenir.
  */
 export function AttributionBar({ manifest }: { manifest: DataManifest }) {
+  const { t } = useTranslation();
   const basemapId = useAppStore((s) => s.basemapId);
   const basemap = getBasemap(basemapId);
 
@@ -25,6 +27,10 @@ export function AttributionBar({ manifest }: { manifest: DataManifest }) {
           </a>
         </>
       )}
+      {' · '}
+      <a href="https://websitenai.com" target="_blank" rel="noreferrer" data-testid="attribution-credit">
+        {t('map.madeBy')}
+      </a>
     </div>
   );
 }

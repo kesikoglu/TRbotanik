@@ -57,7 +57,8 @@
     "basemapEsri": "Esri World Imagery (uydu)",
     "basemapMaptiler": "MapTiler (uydu)",
     "basemapGroup": "Altlık harita",
-    "tileLoadError": "Uydu karoları yüklenemedi. İnternet bağlantınızı veya bu sayfanın dış içerik erişim iznini kontrol edin; sorun sürerse Çevrimdışı altlığa dönün."
+    "tileLoadError": "Uydu karoları yüklenemedi. İnternet bağlantınızı veya bu sayfanın dış içerik erişim iznini kontrol edin; sorun sürerse Çevrimdışı altlığa dönün.",
+    "madeBy": "websitenai.com tarafından yapılmıştır"
   },
   "legend": {
     "title": "Lejant",
