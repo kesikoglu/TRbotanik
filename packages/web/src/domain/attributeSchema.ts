@@ -28,6 +28,8 @@ export interface AttributeRow {
   labelKey: string;
   value: AttrValue;
   source?: SourceId;
+  /** Kaynağın tam atıf metni — varsa rozet ipucunda kısa etiket yerine gösterilir. */
+  citation?: string;
 }
 
 export interface AttributeGroup {
@@ -61,6 +63,7 @@ function row<T>(
     labelKey,
     value: isEmpty ? missing(detail, key) : format(value as NonNullable<T>),
     source: field?.provenance?.source,
+    citation: field?.provenance?.citation,
   };
 }
 

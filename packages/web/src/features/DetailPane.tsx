@@ -122,7 +122,7 @@ function SpeciesDetail({
                       {row.source && row.value.kind !== 'missing' && (
                         <span
                           className="attr-provenance"
-                          title={`${t('provenance.label')}: ${t(`provenance.${row.source}`)}`}
+                          title={`${t('provenance.label')}: ${row.citation ?? t(`provenance.${row.source}`)}`}
                         >
                           {t(`provenance.${row.source}`)}
                         </span>

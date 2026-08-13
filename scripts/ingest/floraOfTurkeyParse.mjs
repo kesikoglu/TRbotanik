@@ -1,19 +1,23 @@
 /**
- * Flora of Turkey (P. H. Davis, 1965–1988) ciltlerinden OCR ile çıkarılmış
- * tür kayıtlarını (`data/curated/flora-of-turkey/*.xlsx`) ayrıştırır ve
- * metindeki Davis kare atıflarını (ör. "A2(A) Istanbul:", "C6 Adana:")
- * çıkarır.
+ * Türkiye florası üzerine basılı literatürden OCR ile çıkarılmış tür
+ * kayıtlarını (`data/curated/flora-of-turkey/*.xlsx`) ayrıştırır ve
+ * metindeki Davis kare atıflarını çıkarır. Bu dizin tek bir esere değil,
+ * dağılım paragraflarında Davis kare kodu kullanan literatüre aittir:
+ * P. H. Davis'in *Flora of Turkey* (1965–1988) ciltleri "KOD(alt-kod)?
+ * İl-adı:" biçimini kullanır (ör. "A2(A) Istanbul:"); D. Podlech & Sh.
+ * Zarre'nin *Astragalus* revizyonu (2013) ise "İl-adı: [KOD]" biçimini
+ * kullanır (ör. "Kayseri: [B5]") — ikisi de aynı fonksiyonla ayrıştırılır.
  *
- * Bu ciltler Davis kareleme sisteminin BİZZAT kaynağıdır (bkz. davis.ts
+ * Bu eserler Davis kareleme sisteminin BİZZAT kaynağıdır (bkz. davis.ts
  * başlık yorumu) — dolayısıyla `PlantDetail.davisSquares` ("literatürde
  * bildirilen yayılış") alanı için mümkün olan en yetkili kaynaktır.
  *
  * Kaynak dosyalar bir PDF taramasının OCR çıktısından üretildi; metin
  * kaçınılmaz OCR gürültüsü içerir (satır içi tire bölünmeleri, "5"↔"S",
  * "1"↔"l"/"I" karışıklığı, sayfa başlığı/numarası sızıntıları). Bu yüzden
- * kare kodları yalnızca "KOD(alt-kod)? İl-adı:" biçimindeki güçlü bir
- * bağlamda aranır VE normalize edildikten sonra 29 geçerli Davis karesinden
- * biri değilse atılır — tahmin yürütülmez.
+ * kare kodları yalnızca güçlü bir bağlamda (yer adına bitişik iki nokta
+ * üst üste, ya da köşeli parantez) aranır VE normalize edildikten sonra
+ * 29 geçerli Davis karesinden biri değilse atılır — tahmin yürütülmez.
  */
 import ExcelJS from 'exceljs';
 import JSZip from 'jszip';
@@ -28,6 +32,12 @@ const VALID_CODES = new Set(DAVIS_CODES);
 // adı arasındaki boşluğu tamamen düşürebiliyor (ör. "C6Adana:"). Asıl
 // güvenlik, baştaki KESİN "[ABC]+rakam" eşleşmesinden gelir.
 const CODE_PATTERN = /\b([ABC])([\dSslIO]{1,2})(\([A-Z]\))?\s*([A-ZÇĞİÖŞÜ][^\s:]{0,30}):/g;
+
+// Podlech & Zarre (2013) gibi bazı eserler kodu köşeli parantez içinde,
+// yer adından SONRA verir (ör. "Kayseri: [B5] above Talas..."). Parantezin
+// İÇİNDE yalnızca kod bulunması (başka metin olmaması) tek başına güvenli
+// bir sinyal — OCR gürültüsü nadiren tam olarak "[HARF+1-2 rakam]" üretir.
+const BRACKET_PATTERN = /\[([ABC])([\dSslIO]{1,2})\]/g;
 
 function normalizeDigits(text) {
   return text.replace(/S/g, '5').replace(/s/g, '5').replace(/[lI]/g, '1').replace(/O/g, '0');
@@ -51,6 +61,10 @@ export function extractDavisSquares(text) {
   const cleaned = dehyphenateWraps(text);
   const codes = new Set();
   for (const match of cleaned.matchAll(CODE_PATTERN)) {
+    const code = match[1] + normalizeDigits(match[2]);
+    if (VALID_CODES.has(code)) codes.add(code);
+  }
+  for (const match of cleaned.matchAll(BRACKET_PATTERN)) {
     const code = match[1] + normalizeDigits(match[2]);
     if (VALID_CODES.has(code)) codes.add(code);
   }

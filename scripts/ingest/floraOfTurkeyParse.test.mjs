@@ -52,4 +52,21 @@ describe('Flora of Turkey OCR metninden Davis kare çıkarımı', () => {
   it('tekrarlayan kod atıflarını tekilleştirir', () => {
     expect(extractDavisSquares('C2 Mugla: filanca! C2 Mugla: falanca!')).toEqual(['C2']);
   });
+
+  it('köşeli parantezli kodları yakalar (Podlech & Zarre biçimi: "İl: [KOD] yer")', () => {
+    expect(extractDavisSquares('Kayseri: [B5] above Talas, Agida mt., 1900 m, Balls 1234!')).toEqual(['B5']);
+  });
+
+  it('köşeli parantez içindeki OCR karışıklığını da normalize eder', () => {
+    expect(extractDavisSquares('Konya: [CS] Seydişehir, Tinaz Dagi, 1500 m.')).toEqual(['C5']);
+  });
+
+  it('parantez içinde kod dışında metin varsa eşleştirmez (belirsiz bağlam)', () => {
+    expect(extractDavisSquares('[C5 Ratay] Akra Da., bir yerde.')).toEqual([]);
+  });
+
+  it('aynı paragrafta hem iki nokta üst üste hem köşeli parantez biçimini birlikte çıkarır', () => {
+    const text = 'Specimens examined: Turkey. Konya: [C4] Seydişehir; K. Maraş: [C4] above Koraslin. C6 Adana: nr. Osmaniye.';
+    expect(new Set(extractDavisSquares(text))).toEqual(new Set(['C4', 'C6']));
+  });
 });

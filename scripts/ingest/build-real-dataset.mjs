@@ -134,10 +134,15 @@ async function main() {
       'filtrelenip data/curated/wcvp-turkey.csv olarak eklendi.',
   };
 
-  // Flora of Turkey ciltleri (P. H. Davis, 1965–1988) — Davis kareleme sisteminin
-  // BİZZAT kaynağı; her cilt OCR ile çıkarılıp data/curated/flora-of-turkey/'a
-  // .xlsx olarak eklenir. Birden çok cilt aynı türe atıfta bulunabilir (nadiren),
-  // bu yüzden kareler tüm ciltler boyunca birleştirilir (union).
+  // data/curated/flora-of-turkey/'daki .xlsx dosyaları TEK bir esere ait değil —
+  // Davis kare kodu kullanan, Türkiye florası üzerine basılı literatürün tamamına
+  // ait (bkz. floraOfTurkeyParse.mjs başlık yorumu): P. H. Davis'in Flora of
+  // Turkey ciltleri (Davis kareleme sisteminin BİZZAT kaynağı) ve, yalnızca
+  // Astragalus cinsi için, D. Podlech & Sh. Zarre'nin 2013 revizyonu. Her eser
+  // OCR ile çıkarılıp .xlsx olarak eklenir. Birden çok eser/cilt aynı türe
+  // atıfta bulunabilir, bu yüzden kareler tümü boyunca birleştirilir (union) —
+  // hangi karenin hangi eserden geldiği ayrı ayrı izlenmez, tek bir ortak atıf
+  // metninde her ikisi de anılır (aşağıda).
   const floraOfTurkeyIndex = new Map(); // speciesKey(ad) -> Set<DavisCode>
   if (existsSync(FLORA_OF_TURKEY_DIR)) {
     const files = (await readdir(FLORA_OF_TURKEY_DIR)).filter((f) => f.endsWith('.xlsx'));
@@ -160,9 +165,11 @@ async function main() {
     source: 'flora-of-turkey',
     retrievedAt: now,
     citation:
-      "P. H. Davis (ed.), Flora of Turkey and the East Aegean Islands (1965–1988). " +
-      'Basılı ciltlerin OCR taramasından, dağılım paragraflarındaki Davis kare atıflarından çıkarıldı ' +
-      '(kullanıcı tarafından sağlandı) — Davis kareleme sisteminin tanımlandığı asıl kaynak.',
+      "P. H. Davis (ed.), Flora of Turkey and the East Aegean Islands (1965–1988) — " +
+      'Davis kareleme sisteminin tanımlandığı asıl kaynak; Astragalus cinsi için ayrıca ' +
+      'D. Podlech & Sh. Zarre, A taxonomic revision of the genus Astragalus L. in the Old World, ' +
+      'Vol. III (Naturhistorisches Museum Wien, 2013). Basılı ciltlerin OCR taramasından, ' +
+      'dağılım paragraflarındaki Davis kare atıflarından çıkarıldı (kullanıcı tarafından sağlandı).',
   };
 
   const EUNIS_SOURCE = {
