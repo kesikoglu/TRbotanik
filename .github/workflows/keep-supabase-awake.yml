@@ -1,0 +1,34 @@
+name: Supabase'i uyanık tut
+
+# Supabase'in ücretsiz planı, proje 7 gün boyunca hiç API isteği almazsa
+# otomatik olarak duraklatılıyor (bkz. kullanıcı geri bildirimi — proje
+# "paused" durumuna düştü). Bu iş akışı 3 günde bir gerçek bir veritabanı
+# sorgusu (REST API üzerinden) atarak projeyi "etkin" tutar — 7 günlük eşiğin
+# altında kalınır. Kalıcı çözüm Supabase Pro'ya geçmek olurdu (otomatik
+# duraklatma tamamen kalkıyor); bu, o maliyete girmeden ücretsiz bir alternatif.
+#
+# İstekte kullanılan `anon` anahtarı GİZLİ DEĞİLDİR — tasarımı gereği herkese
+# açıktır ve zaten uygulamanın istemci paketinde bulunur (bkz.
+# packages/web/src/backend/config.ts'teki açıklama). Bu yüzden secret olarak
+# saklanmasına gerek yok, doğrudan burada yazılı.
+on:
+  schedule:
+    - cron: '0 6 */3 * *' # her 3 günde bir, 06:00 UTC
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Supabase REST API'sine hafif bir sorgu at
+        run: |
+          url="https://icqghseimvjyslotxjbv.supabase.co/rest/v1/species_photos?select=id&limit=1"
+          anon_key="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImljcWdoc2VpbXZqeXNsb3R4amJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU5MzEyOTksImV4cCI6MjEwMTUwNzI5OX0.oJmc8jrqXQytbNjvilB9dtE4mElhvS8Q7h9ZIvvYy2k"
+          status=$(curl -sS -o /dev/null -w "%{http_code}" "$url" \
+            -H "apikey: $anon_key" \
+            -H "Authorization: Bearer $anon_key")
+          echo "HTTP $status"
+          if [ "$status" -ge 400 ]; then
+            echo "::error::Supabase isteği başarısız (HTTP $status) — proje duraklatılmış veya erişilemez olabilir."
+            exit 1
+          fi
