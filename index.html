@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#0f1613" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="canonical" href="https://plum-dove-921331.hostingersite.com/" />
+
+    <title>TRbotanik — Türkiye Botanik Çeşitliliği Haritası</title>
+    <meta
+      name="description"
+      content="Türkiye'nin ~13.000 damarlı bitki taksonunu ve GBIF tabanlı yüz binlerce kaydı Davis kareleme sistemi üzerinde keşfedin. Akademik personel, üniversite öğrencileri ve saha botanikçileri için ücretsiz, açık harita."
+    />
+    <meta name="keywords" content="Türkiye florası, bitki çeşitliliği, botanik, GBIF, Davis kareleme, endemik bitkiler, damarlı bitkiler, taksonomi, biyoçeşitlilik haritası" />
+    <meta name="author" content="TRbotanik" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="TRbotanik" />
+    <meta property="og:title" content="TRbotanik — Türkiye Botanik Çeşitliliği Haritası" />
+    <meta
+      property="og:description"
+      content="Türkiye'nin bitki çeşitliliğini Davis kareleme sistemi üzerinde taksonomik olarak keşfedin. GBIF tabanlı, akademik kullanım için ücretsiz ve açık."
+    />
+    <meta property="og:url" content="https://plum-dove-921331.hostingersite.com/" />
+    <meta property="og:locale" content="tr_TR" />
+    <meta property="og:locale:alternate" content="en_US" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="TRbotanik — Türkiye Botanik Çeşitliliği Haritası" />
+    <meta
+      name="twitter:description"
+      content="Türkiye'nin bitki çeşitliliğini Davis kareleme sistemi üzerinde taksonomik olarak keşfedin."
+    />
+
+    <!--
+      Yapılandırılmış veri (JSON-LD): arama motorlarının ve üretken yapay zekâ
+      (GEO) sistemlerinin bu sitenin NE olduğunu (bir bilimsel veri seti/harita
+      uygulaması) doğru sınıflandırıp atıf yapabilmesi için. WebSite + Dataset
+      birlikte kullanılır — occurrence verisi GBIF kaynaklı gerçek bir veri
+      setidir, salt bir "uygulama" değildir.
+    -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "TRbotanik",
+        "alternateName": "Türkiye Botanik Çeşitliliği Haritası",
+        "url": "https://plum-dove-921331.hostingersite.com/",
+        "description": "Türkiye'nin damarlı bitki çeşitliliğini Davis kareleme sistemi üzerinde gösteren, GBIF tabanlı açık web haritası.",
+        "inLanguage": ["tr", "en"],
+        "isAccessibleForFree": true
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Dataset",
+        "name": "Türkiye Damarlı Bitki Taksonomisi ve Yayılış Kayıtları",
+        "description": "GBIF'ten türetilen, Flora of Turkey / WCVP / POWO ile küratörlenmiş Türkiye damarlı bitki taksonomisi, endemizm, koruma durumu ve Davis kareleme sistemine göre coğrafi yayılış verisi.",
+        "url": "https://plum-dove-921331.hostingersite.com/",
+        "license": "https://creativecommons.org/licenses/by/4.0/",
+        "creator": {
+          "@type": "Organization",
+          "name": "TRbotanik"
+        },
+        "spatialCoverage": {
+          "@type": "Place",
+          "name": "Türkiye"
+        },
+        "keywords": ["botanik", "biyoçeşitlilik", "GBIF", "damarlı bitkiler", "endemizm", "Davis kareleme", "Türkiye florası"],
+        "isAccessibleForFree": true,
+        "distribution": {
+          "@type": "DataDownload",
+          "encodingFormat": "text/html",
+          "contentUrl": "https://plum-dove-921331.hostingersite.com/"
+        }
+      }
+    </script>
+    <script type="module" crossorigin src="/assets/index-DIruimNb.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/maplibre-Ciuwd5cO.js">
+    <link rel="stylesheet" crossorigin href="/assets/index-B_9akRU9.css">
+  </head>
+  <body>
+    <div id="root">
+      <!--
+        React `createRoot` bu içeriğin TAMAMINI mount anında değiştirir —
+        yalnızca JavaScript çalıştırmayan tarayıcılar/botlar (çoğu üretken
+        yapay zekâ crawler'ı buna dahildir) için anlamlı, doğru bir ilk
+        içerik bırakır. Sayılar (takson/kayıt sayısı) kasıtlı olarak
+        SABİTLENMEDİ — canlı sitede üst çubukta güncel hâliyle görünür.
+      -->
+      <main style="max-width: 720px; margin: 40px auto; padding: 0 20px; font-family: system-ui, sans-serif; color: #e8f0ea; background: #0f1613;">
+        <h1>TRbotanik — Türkiye Botanik Çeşitliliği Haritası</h1>
+        <p>
+          TRbotanik, Türkiye'nin damarlı bitki çeşitliliğini akademik Davis
+          kareleme sistemi (A1–C10, 29 bölge) üzerinde gösteren, GBIF tabanlı,
+          ücretsiz ve açık bir interaktif haritadır. Akademik personel,
+          üniversite öğrencileri ve saha botanikçileri için tasarlanmıştır.
+        </p>
+        <h2>İçerik</h2>
+        <ul>
+          <li>Türkiye'de kaydedilmiş bitki taksonlarının taksonomik ağacı (sınıf → takım → familya → cins → tür)</li>
+          <li>Her takson için bilimsel/Türkçe/İngilizce adlar, sınıflandırma, yaşam formu, habitat, yükselti, çiçeklenme dönemi</li>
+          <li>Türkiye endemizmi ve IUCN/Kırmızı Kitap koruma durumu</li>
+          <li>GBIF kaynaklı yüz binlerce coğrafi kayıt, Davis karelerine göre haritalanmış</li>
+          <li>Lisanslı tür fotoğrafları ve kayıtlı katkıda bulunanların onaylı saha gözlemleri</li>
+        </ul>
+        <p>
+          Tüm veriler kaynağıyla birlikte gösterilir; GBIF'ten gelen ham
+          veri ile Flora of Turkey/WCVP/POWO'dan küratörlenen alanlar
+          arayüzde her zaman ayırt edilir.
+        </p>
+        <p><a href="/llms.txt" style="color:#7dd3fc">Yapay zekâ sistemleri için özet (llms.txt)</a></p>
+      </main>
+    </div>
+  </body>
+</html>
