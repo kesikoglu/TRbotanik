@@ -14,7 +14,7 @@
     "@trbotanik/shared": "*",
     "exceljs": "^4.4.0",
     "i18next": "^25.0.0",
-    "maplibre-gl": "^5.0.0",
+    "maplibre-gl": "^6.4.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-i18next": "^15.0.0",
